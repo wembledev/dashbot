@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dashbot-bg: #0a0a0a;
+  --color-dashbot-surface: #151515;
+  --color-dashbot-border: #333;
+  --color-dashbot-text: #e0e0e0;
+  --color-dashbot-muted: #888;
+  --color-dashbot-primary: #2d5a27;
+  --color-dashbot-primary-hover: #3d7a37;
+  --color-dashbot-accent: #4a9eff;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer base {
+  html, body, #app {
+    @apply h-full w-full;
+  }
+
+  body {
+    @apply bg-dashbot-bg text-dashbot-text antialiased;
+    font-size: 18px;
+    scrollbar-color: #333 #0a0a0a;
+    scrollbar-width: thin;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-6 py-3 rounded-full font-semibold transition-all duration-200;
+  }
+
+  .btn-primary {
+    @apply bg-dashbot-primary hover:bg-dashbot-primary-hover text-white;
+  }
+
+  .btn-outline {
+    @apply border-2 border-dashbot-border hover:border-dashbot-accent bg-transparent;
+  }
+
+  .card {
+    @apply bg-dashbot-surface rounded-2xl p-5 border border-dashbot-border;
+  }
+
+  .input {
+    @apply w-full px-4 py-3 bg-dashbot-surface border-2 border-dashbot-border rounded-xl text-white focus:border-dashbot-accent focus:outline-none;
+  }
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
