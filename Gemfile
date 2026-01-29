@@ -50,3 +50,5 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
+
+gem "vite_rails", "~> 3.0"
