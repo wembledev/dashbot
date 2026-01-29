@@ -9,10 +9,14 @@
     "vite-plugin-ruby": "^5.1.2"
   },
   "dependencies": {
+    "@inertiajs/react": "^2.3.12",
     "@tailwindcss/vite": "^4.1.18",
     "@vitejs/plugin-react": "^5.1.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwindcss": "^4.1.18"
+  },
+  "scripts": {
+    "check": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json"
   }
 }
