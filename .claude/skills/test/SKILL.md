@@ -5,20 +5,24 @@ allowed-tools: Bash
 
 ## Description
 
-Runs both the Rails and frontend test suites in parallel, then summarizes the combined results.
+Runs all test suites and security scans in parallel, then summarizes the combined results.
 
 ## Steps
 
-1. **Run both test suites in parallel** using the Bash tool:
+1. **Run all suites and scans in parallel** using the Bash tool:
 
    - Rails tests: `bin/rails test`
+   - System tests: `bin/rails test:system`
    - Frontend tests: `npm test`
+   - Security scan: `bin/brakeman --no-pager`
+   - Gem audit: `bin/bundler-audit`
 
-   Launch both commands simultaneously using parallel Bash tool calls.
+   Launch all five commands simultaneously using parallel Bash tool calls.
 
-2. **Summarize results** after both complete:
+2. **Summarize results** after all complete:
 
    - Report pass/fail counts for each suite
+   - Report warnings/vulnerabilities for each scan
    - List any failures with file and test name
    - Give an overall pass/fail status
 
@@ -30,8 +34,15 @@ Runs both the Rails and frontend test suites in parallel, then summarizes the co
 ### Rails (Minitest)
 X tests, Y assertions, Z failures, W errors
 
+### System Tests (Selenium)
+X tests, Y assertions, Z failures, W errors
+
 ### Frontend (Vitest)
 X tests passed, Y failed
+
+### Security
+- Brakeman: X warnings
+- Bundler Audit: X vulnerabilities
 
 ### Overall: PASS / FAIL
 ```

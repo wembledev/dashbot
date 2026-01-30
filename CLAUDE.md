@@ -8,6 +8,7 @@ Rails 8.1 + Inertia.js + React 19 + Vite 7 + Tailwind v4 + shadcn/ui, Ruby 4.0.1
 |---------|---------|
 | `bin/dev` | Start Rails + Vite dev servers |
 | `bin/rails test` | Rails Minitest suite |
+| `bin/rails test:system` | System tests (Selenium + headless Chrome) |
 | `npm test` | Vitest frontend suite |
 | `npm run test:watch` | Vitest watch mode |
 | `npm run check` | TypeScript type-check (`tsconfig.app.json` + `tsconfig.node.json`) |
@@ -45,8 +46,10 @@ app/
     test/                         # Vitest tests (mirrors source structure)
 test/
   test_helper.rb
+  application_system_test_case.rb # Base class for system tests (removes Vite stubs)
   fixtures/                       # Minitest fixtures
   models/, integration/           # Rails tests
+  system/                         # System tests (Selenium + headless Chrome)
 config/
   ci.rb                           # CI step definitions
 ```
@@ -91,6 +94,14 @@ config/
 - `fixtures :all` loaded globally in `ActiveSupport::TestCase`
 - Parallel execution enabled (`workers: :number_of_processors`)
 - Vite asset helpers stubbed to empty strings in test env
+
+### System Tests (Selenium)
+
+- Tests in `test/system/` — inherit from `ApplicationSystemTestCase`
+- `driven_by :selenium, using: :headless_chrome`
+- Vite stubs are removed so tests use real built assets (`npx vite build` first)
+- Use Capybara DSL: `visit`, `fill_in`, `click_on`, `assert_text`, `assert_current_path`
+- CI runs `npx vite build` before `bin/rails test:system`
 
 ### Frontend (Vitest)
 
