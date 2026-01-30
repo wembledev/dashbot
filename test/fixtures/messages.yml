@@ -1,0 +1,4 @@
+user_greeting:
+  chat_session: navigation_chat
+  role: user
+  content: Hello Dashbot!

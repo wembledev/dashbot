@@ -1,0 +1,3 @@
+admin:
+  encrypted_password: <%= BCrypt::Password.create("dashbot123") %>
+  last_login_at: <%= Time.current %>

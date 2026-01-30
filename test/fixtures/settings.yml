@@ -1,0 +1,5 @@
+dark_theme:
+  settable_type: Profile
+  settable_id: <%= ActiveRecord::FixtureSet.identify(:driver) %>
+  key: theme
+  value: dark
