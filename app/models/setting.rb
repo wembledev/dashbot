@@ -3,7 +3,7 @@
 class Setting < ApplicationRecord
   belongs_to :settable, polymorphic: true, optional: true
 
-  validates :key, presence: true, uniqueness: { scope: [:settable_type, :settable_id] }
+  validates :key, presence: true, uniqueness: { scope: [ :settable_type, :settable_id ] }
 
   def self.get(settable, key)
     find_by(settable: settable, key: key)&.value

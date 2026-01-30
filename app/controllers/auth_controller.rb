@@ -2,7 +2,7 @@
 
 class AuthController < ApplicationController
   skip_before_action :require_authentication
-  skip_before_action :verify_authenticity_token, only: [:login]
+  skip_before_action :verify_authenticity_token, only: [ :login ]
 
   def index
     current_user ? redirect_to(dashboard_path) : render(inertia: "auth/qr_login")
