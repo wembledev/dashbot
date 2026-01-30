@@ -1,0 +1,104 @@
+# Dashbot
+
+Rails 8.1 + Inertia.js + React 19 + Vite 7 + Tailwind v4 + shadcn/ui, Ruby 4.0.1, TypeScript 5.9, SQLite3.
+
+## Commands
+
+| Command | Purpose |
+|---------|---------|
+| `bin/dev` | Start Rails + Vite dev servers |
+| `bin/rails test` | Rails Minitest suite |
+| `npm test` | Vitest frontend suite |
+| `npm run test:watch` | Vitest watch mode |
+| `npm run check` | TypeScript type-check (`tsconfig.app.json` + `tsconfig.node.json`) |
+| `bin/rubocop` | Ruby linting (rubocop-rails-omakase) |
+| `bin/brakeman` | Security scan |
+| `bin/bundler-audit` | Gem vulnerability audit |
+| `bin/ci` | Full CI: setup, rubocop, bundler-audit, brakeman, rails test, seed |
+| `npx shadcn@latest add <name>` | Add shadcn/ui component |
+
+## Architecture
+
+### Inertia bridge
+
+Controllers render `render inertia: "folder/component", props: { ... }`. The entrypoint (`app/frontend/entrypoints/inertia.tsx`) resolves pages via `import.meta.glob('../pages/**/*.tsx', { eager: true })`, so `"home/index"` maps to `app/frontend/pages/home/index.tsx`.
+
+### Directory layout
+
+```
+app/
+  controllers/
+    concerns/authentication.rb   # Session-based auth, included by ApplicationController
+    auth_controller.rb            # Login (skips require_authentication)
+    home_controller.rb
+  models/
+    user.rb, profile.rb, chat_session.rb, message.rb, qr_token.rb, setting.rb
+  frontend/
+    entrypoints/inertia.tsx       # Inertia app bootstrap (React 19 createRoot, StrictMode)
+    pages/                        # Inertia page components (default exports)
+      auth/login.tsx, auth/qr_login.tsx
+      home/index.tsx
+    components/ui/                # shadcn/ui components
+    lib/utils.ts                  # cn() helper
+    styles/app.css                # Tailwind v4 theme + shadcn CSS variables
+    types/index.ts                # Shared TypeScript types
+    test/                         # Vitest tests (mirrors source structure)
+test/
+  test_helper.rb
+  fixtures/                       # Minitest fixtures
+  models/, integration/           # Rails tests
+config/
+  ci.rb                           # CI step definitions
+```
+
+### Key wiring
+
+- **Path aliases**: `@/` and `~/` both resolve to `app/frontend/` (tsconfig.app.json + vitest.config.ts)
+- **Auth**: Session-based via `Authentication` concern — stores `session[:user_id]` and `session[:profile_id]`, provides `current_user` and `current_profile` helpers
+- **Inertia types**: `app/frontend/types/index.ts`
+- **Background jobs**: solid_queue; **Caching**: solid_cache
+
+## Code Conventions
+
+### Rails
+
+- `frozen_string_literal: true` on all Ruby files
+- `has_secure_password` with `alias_attribute :password_digest, :encrypted_password`
+- Controllers include `Authentication` concern; skip with `skip_before_action :require_authentication`
+- Inertia rendering: `render inertia: "folder/component", props: { ... }`
+- Rubocop: `rubocop-rails-omakase` style, no custom overrides
+
+### React / TypeScript
+
+- Pages are default exports with `interface Props`
+- Import via `@/` alias (e.g., `@/components/ui/button`)
+- `router` from `@inertiajs/react` for navigation
+- Strict TS: `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`
+
+### Tailwind v4 / shadcn/ui
+
+- No `tailwind.config.js` — uses `@tailwindcss/vite` plugin + `@theme` directive in `app.css`
+- Custom `dashbot-*` colors defined in `@theme` block (e.g., `bg-dashbot-bg`, `text-dashbot-primary`)
+- shadcn/ui: New York style, `data-slot` attributes on every element, `cn()` for className merging, CVA for variants
+- Icons: `lucide-react`
+
+## Testing
+
+### Rails (Minitest)
+
+- Fixtures in `test/fixtures/*.yml` — access as `users(:admin)`, `profiles(:driver)`
+- Sign in: `sign_in_as(users(:admin))` — POSTs to test-only `/test_sign_in` route
+- `fixtures :all` loaded globally in `ActiveSupport::TestCase`
+- Parallel execution enabled (`workers: :number_of_processors`)
+- Vite asset helpers stubbed to empty strings in test env
+
+### Frontend (Vitest)
+
+- Tests in `app/frontend/test/` mirroring source structure
+- Globals enabled: `describe`, `it`, `expect`, `vi` — no imports needed
+- jest-dom matchers available (`toBeInTheDocument()`, `toHaveAttribute()`, etc.)
+- Mock fetch: `vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(...))`
+- Mock Inertia: `vi.mock("@inertiajs/react", () => ({ router: { delete: vi.fn() } }))`
+- User interactions: `userEvent.setup()` then `await user.click(...)` / `await user.type(...)`
+- Async assertions: `await waitFor(() => { expect(...) })`
+- Cleanup: `vi.restoreAllMocks()` in `beforeEach`
