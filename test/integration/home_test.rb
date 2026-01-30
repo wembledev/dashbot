@@ -3,8 +3,9 @@
 require "test_helper"
 
 class HomeTest < ActionDispatch::IntegrationTest
-  test "GET / renders Inertia page" do
-    get root_path
+  test "GET /dashboard renders Inertia page when authenticated" do
+    sign_in_as(users(:admin))
+    get dashboard_path
     assert_response :success
 
     match = response.body.match(%r{<script[^>]*data-page[^>]*>(.+?)</script>}m)
@@ -12,5 +13,15 @@ class HomeTest < ActionDispatch::IntegrationTest
 
     page = JSON.parse(match[1])
     assert_equal "home/index", page["component"]
+  end
+
+  test "GET /dashboard redirects to login when not authenticated" do
+    get dashboard_path
+    assert_redirected_to login_path
+  end
+
+  test "GET / redirects to /dashboard" do
+    get root_path
+    assert_response :redirect
   end
 end

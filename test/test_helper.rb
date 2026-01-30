@@ -20,3 +20,14 @@ module ActiveSupport
     fixtures :all
   end
 end
+
+module SignInHelper
+  def sign_in_as(user, profile = nil)
+    profile ||= user.profiles.first
+    post "/test_sign_in", params: { user_id: user.id, profile_id: profile&.id }
+  end
+end
+
+class ActionDispatch::IntegrationTest
+  include SignInHelper
+end

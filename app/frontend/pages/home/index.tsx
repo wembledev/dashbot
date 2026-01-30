@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { router } from '@inertiajs/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -31,8 +32,11 @@ export default function HomeIndex() {
             ))}
           </div>
         </CardHeader>
-        <div className="p-6 pt-0">
+        <div className="p-6 pt-0 flex gap-2 justify-center">
           <Button onClick={next}>{vibes[vibe].label}</Button>
+          <Button variant="outline" onClick={() => router.delete('/logout')}>
+            Logout
+          </Button>
         </div>
       </Card>
     </div>

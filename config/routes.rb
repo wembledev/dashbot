@@ -1,14 +1,23 @@
 Rails.application.routes.draw do
-  root "home#index"
+  # Authentication
+  get "login", to: "auth#index", as: :login
+  post "login/:token", to: "auth#login", as: :auth_login
+  delete "logout", to: "auth#logout", as: :logout
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
+  scope "qr" do
+    get "/", to: "auth#qr", as: :qr
+    get ":token/status", to: "auth#qr_status", as: :qr_status
+    get ":token", to: "auth#login_form", as: :qr_login
+  end
+
+  # Dashboard
+  get "dashboard", to: "home#index", as: :dashboard
+
+  # Health
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+  # Test-only
+  post "test_sign_in", to: "test_sessions#create" if Rails.env.test?
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  root to: redirect("/dashboard")
 end

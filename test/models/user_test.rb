@@ -21,6 +21,19 @@ class UserTest < ActiveSupport::TestCase
     assert_includes user.chat_sessions, chat_sessions(:navigation_chat)
   end
 
+  test "default_profile returns existing profile" do
+    user = users(:admin)
+    assert_equal profiles(:driver), user.default_profile
+  end
+
+  test "default_profile creates Driver profile when none exist" do
+    user = User.create!(password: "testpass123")
+    assert_difference "Profile.count", 1 do
+      profile = user.default_profile
+      assert_equal "Driver", profile.name
+    end
+  end
+
   test "destroying user destroys profiles" do
     user = User.create!(password: "testpass123")
     user.profiles.create!(name: "Test")

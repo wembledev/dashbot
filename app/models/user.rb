@@ -6,4 +6,8 @@ class User < ApplicationRecord
 
   has_many :profiles, dependent: :destroy
   has_many :chat_sessions
+
+  def default_profile
+    profiles.first || profiles.create!(name: "Driver")
+  end
 end

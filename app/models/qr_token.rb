@@ -10,14 +10,19 @@ class QrToken < ApplicationRecord
 
   validates :token, presence: true, uniqueness: true
 
-  scope :valid, -> { where(used: false).where("expires_at > ?", Time.current) }
+  scope :pending, -> { where(used: false).where("expires_at > ?", Time.current) }
+  scope :unexpired, -> { where("expires_at > ?", Time.current) }
 
   def self.create_for_session(session_id)
     create!(session_id: session_id)
   end
 
-  def self.find_valid(token)
-    valid.find_by(token: token)
+  def self.find_pending(token)
+    pending.find_by(token: token)
+  end
+
+  def self.find_unexpired(token)
+    unexpired.find_by(token: token)
   end
 
   def claim!(user)
@@ -30,6 +35,12 @@ class QrToken < ApplicationRecord
 
   def owned_by_session?(session_id)
     self.session_id == session_id
+  end
+
+  def to_qr_png_data_uri(base_url:)
+    qr = RQRCode::QRCode.new("#{base_url}/auth/login/#{token}")
+    png = qr.as_png(size: 280, border_modules: 2)
+    "data:image/png;base64,#{Base64.strict_encode64(png.to_s)}"
   end
 
   private
