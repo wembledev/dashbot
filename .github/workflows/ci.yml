@@ -6,25 +6,10 @@ on:
     branches: [ main ]
 
 jobs:
-  scan_ruby:
-    runs-on: ubuntu-latest
+  # Stage 1: Lint & scan (run in parallel)
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
-      - name: Scan for common Rails security vulnerabilities using static analysis
-        run: bin/brakeman --no-pager
-      
-      - name: Scan for known security vulnerabilities in gems used
-        run: bin/bundler-audit
-      
   lint:
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
     env:
       RUBOCOP_CACHE_ROOT: tmp/rubocop
@@ -65,25 +50,30 @@ jobs:
       - name: Type-check frontend
         run: npm run check
 
-  frontend:
+  security:
+    name: Security Scan
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          node-version-file: .node-version
-          cache: npm
+          bundler-cache: true
 
-      - name: Install Node dependencies
-        run: npm ci
+      - name: Scan for common Rails security vulnerabilities using static analysis
+        run: bin/brakeman --no-pager
 
-      - name: Run frontend tests
-        run: npm test
+      - name: Scan for known security vulnerabilities in gems used
+        run: bin/bundler-audit
 
-  test:
+  # Stage 2: Tests (run in parallel, after lint & scan pass)
+
+  rails:
+    name: Rails Tests
+    needs: [lint, security]
     runs-on: ubuntu-latest
 
     # services:
@@ -108,7 +98,29 @@ jobs:
           # REDIS_URL: redis://localhost:6379/0
         run: bin/rails db:test:prepare test
 
-  system-test:
+  frontend:
+    name: Frontend Tests
+    needs: [lint, security]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Run frontend tests
+        run: npm test
+
+  system:
+    name: System Tests
+    needs: [lint, security]
     runs-on: ubuntu-latest
 
     # services:
@@ -138,7 +150,7 @@ jobs:
       - name: Build frontend assets
         run: npx vite build
 
-      - name: Run System Tests
+      - name: Run system tests
         env:
           RAILS_ENV: test
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
