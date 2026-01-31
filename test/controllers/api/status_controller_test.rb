@@ -2,7 +2,7 @@
 
 require "test_helper"
 
-class StatusApiControllerTest < ActionDispatch::IntegrationTest
+class Api::StatusControllerTest < ActionDispatch::IntegrationTest
   setup do
     ENV["DASHBOT_API_TOKEN"] = "test-status-token-456"
     # Enable memory cache for these tests (test env uses null_store)
@@ -74,7 +74,7 @@ class StatusApiControllerTest < ActionDispatch::IntegrationTest
   test "POST /api/status/update filters out controller params" do
     post "/api/status/update",
       params: {
-        "controller" => "status_api",
+        "controller" => "api/status",
         "action" => "update",
         "format" => "json",
         "agent_status" => { "running" => true },

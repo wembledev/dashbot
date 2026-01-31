@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class CardsApiController < ApplicationController
+class Api::CardsController < ApplicationController
   include ApiAuthentication
 
   skip_before_action :require_authentication

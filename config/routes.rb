@@ -22,17 +22,20 @@ Rails.application.routes.draw do
   get "status/poll", to: "status#poll", as: :status_poll
   post "status/keepalive", to: "status#keepalive", as: :status_keepalive
 
-  # Status API (token auth - receives data from OpenClaw plugin)
-  post "api/status/update", to: "status_api#update", defaults: { format: :json }
+  # API (token auth — used by OpenClaw plugin and agent)
+  namespace :api, defaults: { format: :json } do
+    # Status
+    post "status/update", to: "status#update"
 
-  # Messages API (token auth - assistant messages from agent)
-  post "api/messages/respond", to: "messages_api#respond", defaults: { format: :json }
+    # Messages
+    post "messages/respond", to: "messages#respond"
 
-  # Cards API (token auth - agentic card push + response)
-  post "api/cards", to: "cards_api#create", defaults: { format: :json }
-  post "api/cards/:id/respond", to: "cards_api#respond", as: :card_respond, defaults: { format: :json }
-  post "api/cards/:id/reply", to: "cards_api#reply", as: :card_reply, defaults: { format: :json }
-  get  "api/cards/pending", to: "cards_api#pending", defaults: { format: :json }
+    # Cards
+    post "cards", to: "cards#create"
+    post "cards/:id/respond", to: "cards#respond", as: :card_respond
+    post "cards/:id/reply", to: "cards#reply", as: :card_reply
+    get  "cards/pending", to: "cards#pending"
+  end
 
   # Health
   get "up" => "rails/health#show", as: :rails_health_check

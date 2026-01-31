@@ -2,7 +2,7 @@
 
 require "test_helper"
 
-class CardsApiControllerTest < ActionDispatch::IntegrationTest
+class Api::CardsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @token = "test-token-123"
     ENV["DASHBOT_API_TOKEN"] = @token

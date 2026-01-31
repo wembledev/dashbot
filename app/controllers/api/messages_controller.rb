@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class MessagesApiController < ActionController::API
+class Api::MessagesController < ActionController::API
   include ApiAuthentication
 
   before_action :authenticate_token!

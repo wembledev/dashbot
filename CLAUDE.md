@@ -89,7 +89,9 @@ Browser (StatusChannel)  ←→  Rails Action Cable  ←→  Plugin (ChatChannel
 | `app/channels/chat_channel.rb` | Plugin connection, relays `send_status` to StatusChannel + cache |
 | `app/controllers/status_controller.rb` | Initial page load (from cache), poll endpoint, keepalive |
 | `app/frontend/pages/status/index.tsx` | React status dashboard, StatusChannel subscription |
-| `app/controllers/status_api_controller.rb` | Debug endpoint for direct HTTP status POST |
+| `app/controllers/api/status_controller.rb` | API endpoint for status data from OpenClaw plugin |
+| `app/controllers/api/cards_controller.rb` | API endpoint for agentic card push + response |
+| `app/controllers/api/messages_controller.rb` | API endpoint for assistant messages from agent |
 
 ## Code Conventions
 
