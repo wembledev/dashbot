@@ -6,7 +6,7 @@ class CriticalPathsTest < ApplicationSystemTestCase
   test "visit login page" do
     visit login_path
 
-    assert_text "Dashbot"
+    assert_text "DashBot"
     assert_text "Scan with your phone"
   end
 
@@ -31,6 +31,6 @@ class CriticalPathsTest < ApplicationSystemTestCase
     visit dashboard_path
 
     assert_current_path login_path
-    assert_text "Dashbot"
+    assert_text "DashBot"
   end
 end

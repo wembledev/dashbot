@@ -46,7 +46,7 @@ class QrTokenTest < ActiveSupport::TestCase
 
   test "to_qr_png_data_uri returns base64 PNG data URI" do
     qr = QrToken.create_for_session("sess")
-    uri = qr.to_qr_png_data_uri(base_url: "http://localhost:3000")
+    uri = qr.to_qr_png_data_uri(url: "http://localhost:3000/login/#{qr.token}")
     assert uri.start_with?("data:image/png;base64,")
     assert uri.length > 100
   end
