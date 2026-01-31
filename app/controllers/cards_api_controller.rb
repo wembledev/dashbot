@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 class CardsApiController < ApplicationController
+  include ApiAuthentication
+
   skip_before_action :require_authentication
   skip_before_action :verify_authenticity_token
-  before_action :authenticate!
+  before_action :authenticate_api!
 
   # POST /api/cards — Create a card and broadcast it
   def create
@@ -156,7 +158,7 @@ class CardsApiController < ApplicationController
     user.chat_sessions.find_or_create_by!(profile: profile) { |s| s.title = "Chat" }
   end
 
-  def authenticate!
+  def authenticate_api!
     # Accept either Bearer token (API/plugin) or session cookie (browser)
     token = request.headers["Authorization"]&.delete_prefix("Bearer ")&.strip
     expected = ENV.fetch("DASHBOT_API_TOKEN", "")

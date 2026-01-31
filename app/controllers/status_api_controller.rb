@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class StatusApiController < ActionController::API
+  include ApiAuthentication
+
   before_action :authenticate_token!
 
   def update
@@ -11,16 +13,5 @@ class StatusApiController < ActionController::API
     Rails.cache.write("openclaw_status", status_data, expires_in: 5.minutes)
 
     render json: { ok: true }, status: :ok
-  end
-
-  private
-
-  def authenticate_token!
-    token = request.headers["Authorization"]&.delete_prefix("Bearer ")&.strip
-    expected = ENV.fetch("DASHBOT_API_TOKEN", "")
-
-    unless token.present? && expected.present? && ActiveSupport::SecurityUtils.secure_compare(token, expected)
-      render json: { error: "Unauthorized" }, status: :unauthorized
-    end
   end
 end
