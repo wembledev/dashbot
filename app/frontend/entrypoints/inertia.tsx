@@ -1,6 +1,7 @@
 import { createInertiaApp, type ResolvedComponent } from '@inertiajs/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { UnreadProvider } from '../contexts/unread-context'
 import '../styles/app.css'
 
 void createInertiaApp({
@@ -35,7 +36,9 @@ void createInertiaApp({
   setup({ el, App, props }) {
     createRoot(el).render(
       <StrictMode>
-        <App {...props} />
+        <UnreadProvider>
+          <App {...props} />
+        </UnreadProvider>
       </StrictMode>
     )
   },

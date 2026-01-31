@@ -4,6 +4,7 @@ class ChatSession < ApplicationRecord
   belongs_to :user
   belongs_to :profile
   has_many :messages, dependent: :destroy
+  has_many :cards, dependent: :destroy
 
   validates :title, presence: true
 

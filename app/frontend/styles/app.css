@@ -1,41 +1,76 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-dashbot-bg: #0a0a0a;
-  --color-dashbot-surface: #151515;
-  --color-dashbot-border: #333;
-  --color-dashbot-text: #e0e0e0;
-  --color-dashbot-muted: #888;
-  --color-dashbot-primary: #2d5a27;
-  --color-dashbot-primary-hover: #3d7a37;
-  --color-dashbot-accent: #4a9eff;
+  --color-dashbot-bg: var(--dashbot-bg);
+  --color-dashbot-surface: var(--dashbot-surface);
+  --color-dashbot-surface-solid: var(--dashbot-surface-solid);
+  --color-dashbot-border: var(--dashbot-border);
+  --color-dashbot-text: var(--dashbot-text);
+  --color-dashbot-muted: var(--dashbot-muted);
+  --color-dashbot-primary: #3E6AE1;
+  --color-dashbot-primary-hover: #5A83F0;
+  --color-dashbot-accent: #3E6AE1;
+  --color-dashbot-danger: #e53935;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Dark theme (default) */
+:root, [data-theme="dark"] {
+  --dashbot-bg: #000000;
+  --dashbot-surface: rgba(255,255,255,0.05);
+  --dashbot-surface-solid: #0a0a0a;
+  --dashbot-border: rgba(255,255,255,0.08);
+  --dashbot-text: #e8e8ed;
+  --dashbot-muted: rgba(255,255,255,0.4);
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --dashbot-bg: #f5f5f7;
+  --dashbot-surface: rgba(0,0,0,0.03);
+  --dashbot-surface-solid: #ffffff;
+  --dashbot-border: rgba(0,0,0,0.08);
+  --dashbot-text: #1d1d1f;
+  --dashbot-muted: rgba(0,0,0,0.45);
 }
 
 @layer base {
+  html {
+    font-size: 16px;
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 24px;
+    }
+  }
+
   html, body, #app {
     @apply h-full w-full;
   }
 
   body {
     @apply bg-dashbot-bg text-dashbot-text antialiased;
-    font-size: 18px;
-    scrollbar-color: #333 #0a0a0a;
+    font-weight: 300;
+    scrollbar-color: var(--color-dashbot-surface-solid) #000000;
     scrollbar-width: thin;
   }
 }
 
 @layer components {
   .btn {
-    @apply px-6 py-3 rounded-full font-semibold transition-all duration-200;
+    @apply px-6 py-3 rounded-full font-semibold tracking-wide transition-all duration-200;
+    min-height: 48px;
   }
 
   .btn-primary {
     @apply bg-dashbot-primary hover:bg-dashbot-primary-hover text-white;
+    box-shadow: 0 0 20px rgba(62,106,225,0.3);
   }
 
   .btn-outline {
@@ -43,11 +78,14 @@
   }
 
   .card {
-    @apply bg-dashbot-surface rounded-2xl p-5 border border-dashbot-border;
+    @apply bg-dashbot-surface backdrop-blur-xl rounded-2xl p-5 border border-dashbot-border;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
   }
 
   .input {
-    @apply w-full px-4 py-3 bg-dashbot-surface border-2 border-dashbot-border rounded-xl text-white focus:border-dashbot-accent focus:outline-none;
+    @apply w-full px-4 py-3 bg-dashbot-surface border-2 border-dashbot-border rounded-xl text-white focus:border-dashbot-primary focus:outline-none;
+    min-height: 48px;
+    font-weight: 300;
   }
 }
 

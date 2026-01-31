@@ -70,6 +70,9 @@ Rails.application.configure do
   # the I18n.default_locale when a translation cannot be found).
   config.i18n.fallbacks = true
 
+  # Allow Action Cable connections without an Origin header (e.g. server-side WebSocket clients).
+  config.action_cable.disable_request_forgery_protection = true
+
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
 
