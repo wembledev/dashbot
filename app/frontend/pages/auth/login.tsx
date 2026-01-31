@@ -7,13 +7,15 @@ interface Props {
 }
 
 export default function Login({ token }: Props) {
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
+
+    const formData = new FormData(e.currentTarget)
+    const password = formData.get('password') as string
 
     try {
       const res = await fetch(`/login/${token}`, {
@@ -35,10 +37,10 @@ export default function Login({ token }: Props) {
   if (success) {
     return (
       <div className="min-h-screen bg-dashbot-bg text-dashbot-text flex items-center justify-center">
-        <Card className="w-80 text-center">
+        <Card className="w-96 text-center">
           <CardHeader>
             <div className="text-7xl mb-4">✅</div>
-            <CardTitle className="text-3xl">You're In!</CardTitle>
+            <CardTitle className="text-3xl font-light tracking-wider">You're In!</CardTitle>
             <CardDescription>You'll be logged in automatically on your other device. You can close this window.</CardDescription>
           </CardHeader>
         </Card>
@@ -48,23 +50,22 @@ export default function Login({ token }: Props) {
 
   return (
     <div className="min-h-screen bg-dashbot-bg text-dashbot-text flex items-center justify-center">
-      <Card className="w-80 text-center">
+      <Card className="w-96 text-center">
         <CardHeader>
           <div className="text-5xl mb-4">🔐</div>
-          <CardTitle>Enter Password</CardTitle>
+          <CardTitle className="font-light tracking-wider">Enter Password</CardTitle>
           <CardDescription>This is your secure login</CardDescription>
         </CardHeader>
         <div className="p-6 pt-0">
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
               placeholder="Password"
               className="input text-center"
               autoFocus
             />
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {error && <p className="text-dashbot-danger text-sm">{error}</p>}
             <Button type="submit" className="w-full">Login</Button>
           </form>
         </div>

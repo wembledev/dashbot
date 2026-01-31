@@ -44,7 +44,7 @@ describe("QrLogin", () => {
 
     render(<QrLogin />)
 
-    expect(screen.getByText("Dashbot")).toBeInTheDocument()
+    expect(screen.getByText("DashBot")).toBeInTheDocument()
     expect(screen.getByText("Scan with your phone to login")).toBeInTheDocument()
 
     // Wait for async state updates to settle
