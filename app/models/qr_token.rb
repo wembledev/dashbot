@@ -37,8 +37,8 @@ class QrToken < ApplicationRecord
     self.session_id == session_id
   end
 
-  def to_qr_png_data_uri(base_url:)
-    qr = RQRCode::QRCode.new("#{base_url}/auth/login/#{token}")
+  def to_qr_png_data_uri(url:)
+    qr = RQRCode::QRCode.new(url)
     png = qr.as_png(size: 280, border_modules: 2)
     "data:image/png;base64,#{Base64.strict_encode64(png.to_s)}"
   end

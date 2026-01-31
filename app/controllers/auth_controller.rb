@@ -14,7 +14,8 @@ class AuthController < ApplicationController
 
     render json: {
       token: token.token,
-      qr_data: token.to_qr_png_data_uri(base_url: request.base_url),
+      qr_data: token.to_qr_png_data_uri(url: qr_login_url(token.token)),
+      expires_at: token.expires_at.iso8601,
       login_url: (qr_login_url(token.token) if Rails.env.development?)
     }.compact
   end
@@ -39,7 +40,7 @@ class AuthController < ApplicationController
     return render json: { error: "Invalid or expired token" }, status: :unauthorized unless token
 
     user = User.first
-    return render json: { error: "Invalid password" }, status: :unauthorized unless user&.authenticate(params[:password])
+    return render json: { error: "Invalid password" }, status: :unauthorized unless user&.authenticate(params[:password].to_s.strip)
 
     token.claim!(user)
     render json: { success: true }
