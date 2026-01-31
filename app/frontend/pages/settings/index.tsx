@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { router } from '@inertiajs/react'
 import Navigation from '@/components/navigation'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Sun, Moon, Trash2, MessageSquare, Brain, Bell, Cpu, ChevronDown, ChevronUp, HelpCircle, Save, RefreshCw } from 'lucide-react'
+import { Sun, Moon, Trash2, MessageSquare, Brain, Bell, Cpu, HelpCircle, Save, RefreshCw } from 'lucide-react'
 
 function ToggleRow({ label, description, enabled, onToggle }: {
   label: string
@@ -32,7 +32,7 @@ function ToggleRow({ label, description, enabled, onToggle }: {
   )
 }
 
-function HelpButton({ helpText, section }: { helpText: string; section: string }) {
+function HelpButton({ helpText }: { helpText: string }) {
   const [showHelp, setShowHelp] = useState(false)
 
   return (
@@ -76,21 +76,20 @@ const BADGE_STYLES: Record<string, string> = {
 }
 
 function ModelSettings() {
-  const [expanded, setExpanded] = useState(false)
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('dashbot-default-model') || 'opus'
     }
     return 'opus'
   })
-  const [saving, setSaving] = useState(false)
+  const [savingModel, setSavingModel] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
 
   const handleModelChange = async (modelAlias: string) => {
     setSelectedModel(modelAlias)
     localStorage.setItem('dashbot-default-model', modelAlias)
 
-    setSaving(true)
+    setSavingModel(true)
     setSaveStatus('idle')
 
     try {
@@ -116,7 +115,7 @@ function ModelSettings() {
       setSaveStatus('error')
       setTimeout(() => setSaveStatus('idle'), 3000)
     } finally {
-      setSaving(false)
+      setSavingModel(false)
     }
   }
 
@@ -126,8 +125,7 @@ function ModelSettings() {
         <CardTitle className="flex items-center gap-2 text-dashbot-text">
           <Cpu className="size-4 text-violet-400" />
           Models
-          <HelpButton 
-            section="models"
+          <HelpButton
             helpText="Choose which AI model handles your conversations. Opus is smartest but most expensive. Haiku is fastest and cheapest."
           />
         </CardTitle>
@@ -153,6 +151,7 @@ function ModelSettings() {
                     name="model"
                     value={m.alias}
                     checked={selectedModel === m.alias}
+                    disabled={savingModel}
                     onChange={(e) => handleModelChange(e.target.value)}
                     className="w-4 h-4 text-dashbot-primary focus:ring-dashbot-primary"
                   />
@@ -293,7 +292,6 @@ function MemorySettings() {
           <Brain className="size-4 text-cyan-400" />
           Memory
           <HelpButton 
-            section="memory"
             helpText="Manage the agent's memory system. Files are indexed and embedded as vectors for semantic search."
           />
         </CardTitle>
@@ -405,7 +403,6 @@ export default function SettingsIndex() {
                   {theme === 'dark' ? <Moon className="size-4 text-indigo-400" /> : <Sun className="size-4 text-amber-400" />}
                   Appearance
                   <HelpButton 
-                    section="appearance"
                     helpText="Toggle between dark and light themes"
                   />
                 </CardTitle>
@@ -428,7 +425,6 @@ export default function SettingsIndex() {
                   <MessageSquare className="size-4 text-blue-400" />
                   Chat
                   <HelpButton 
-                    section="chat"
                     helpText="Manage chat history and message display"
                   />
                 </CardTitle>
@@ -466,7 +462,6 @@ export default function SettingsIndex() {
                   <Bell className="size-4 text-yellow-400" />
                   Notifications
                   <HelpButton 
-                    section="notifications"
                     helpText="Control how and when you receive alerts"
                   />
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-dashbot-primary/20 text-dashbot-primary font-medium">Soon</span>
