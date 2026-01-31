@@ -10,7 +10,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_29_234709) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_31_072235) do
+  create_table "cards", force: :cascade do |t|
+    t.string "card_type", null: false
+    t.integer "chat_session_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "message_id"
+    t.json "metadata"
+    t.json "options", default: "[]", null: false
+    t.text "prompt", null: false
+    t.datetime "responded_at"
+    t.string "response"
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chat_session_id"], name: "index_cards_on_chat_session_id"
+    t.index ["message_id"], name: "index_cards_on_message_id"
+    t.index ["status"], name: "index_cards_on_status"
+  end
+
   create_table "chat_sessions", force: :cascade do |t|
     t.text "context"
     t.datetime "created_at", null: false
@@ -68,6 +85,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_29_234709) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "cards", "chat_sessions"
+  add_foreign_key "cards", "messages"
   add_foreign_key "chat_sessions", "profiles"
   add_foreign_key "chat_sessions", "users"
   add_foreign_key "messages", "chat_sessions"
