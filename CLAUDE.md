@@ -1,4 +1,4 @@
-# Dashbot
+# DashBot
 
 Rails 8.1 + Inertia.js + React 19 + Vite 7 + Tailwind v4 + shadcn/ui, Ruby 4.0.1, TypeScript 5.9, SQLite3.
 
@@ -60,6 +60,36 @@ config/
 - **Auth**: Session-based via `Authentication` concern — stores `session[:user_id]` and `session[:profile_id]`, provides `current_user` and `current_profile` helpers
 - **Inertia types**: `app/frontend/types/index.ts`
 - **Background jobs**: solid_queue; **Caching**: solid_cache
+
+## Status Page (Garbo)
+
+Real-time OpenClaw agent monitoring at `/status`. Data flows entirely over WebSocket — no polling.
+
+### Architecture
+
+```
+Browser (StatusChannel)  ←→  Rails Action Cable  ←→  Plugin (ChatChannel)
+         ↑                                                     ↑
+    status_updates                                     plugin_commands
+```
+
+### Flow
+
+1. **Plugin connects** — `dashbot-openclaw` plugin connects via WebSocket, subscribes to `ChatChannel`. All ChatChannel subscriptions also stream from `plugin_commands`.
+2. **Viewer opens `/status`** — frontend subscribes to `StatusChannel`. First viewer triggers `status_requested` broadcast to `plugin_commands`.
+3. **Plugin receives request** — starts `StatusReporter` which reads OpenClaw state files (sessions, cron jobs, memory DB) and sends `send_status` action every 15s.
+4. **Rails relays data** — `ChatChannel#send_status` calls `StatusChannel.broadcast_status` (WebSocket push to all viewers) and writes to `Rails.cache` (for initial page loads).
+5. **Viewer leaves** — last viewer unsubscribing triggers `status_stopped` → plugin stops reporting.
+
+### Key files
+
+| File | Role |
+|------|------|
+| `app/channels/status_channel.rb` | Viewer count tracking, request/stop lifecycle |
+| `app/channels/chat_channel.rb` | Plugin connection, relays `send_status` to StatusChannel + cache |
+| `app/controllers/status_controller.rb` | Initial page load (from cache), poll endpoint, keepalive |
+| `app/frontend/pages/status/index.tsx` | React status dashboard, StatusChannel subscription |
+| `app/controllers/status_api_controller.rb` | Debug endpoint for direct HTTP status POST |
 
 ## Code Conventions
 

@@ -1,118 +1,124 @@
-# Dashbot
+# DashBot
 
 AI-enabled dashboard utility for your car, gadget, or browser.
 
-Born during a commute — I was driving on FSD and wanted to chat with my [OpenClaw](https://openclaw.ai/) server at home to vibe code in traffic. That session produced a working real-time feedback dashboard, deployed to a subdomain and opened in my Tesla's browser. Dashbot takes that proof of concept and rebuilds it on proper foundations — with a plugin widget system so I can keep vibe-coding on future commutes, and open-sourced for anyone who wants to try it.
+![DashBot screenshot](docs/images/screenshot.png)
 
-## Prerequisites
+Born during a commute — I was driving on FSD and wanted to chat with my [OpenClaw](https://openclaw.ai/) server at home to vibe code in traffic. That session produced a working real-time feedback dashboard, deployed to a subdomain and opened in my Tesla's browser. DashBot takes that proof of concept and rebuilds it on proper foundations — with a plugin widget system so I can keep vibe-coding on future commutes, and open-sourced for anyone who wants to try it.
 
-- Ruby 4.0.1
-- Node.js 24+
-- SQLite3
-
-## Local development
-
-```sh
-# Install dependencies
-bundle install
-npm install
-
-# Set up database
-bin/rails db:prepare
-
-# Start Rails + Vite dev servers
-bin/dev
+```mermaid
+graph LR
+    Browser["Dashboard<br/>(React)"] <-->|Action Cable<br/>session auth| Rails["DashBot Rails<br/>+ SQLite"]
+    Plugin["OpenClaw Plugin"] <-->|Action Cable<br/>token auth| Rails
+    Plugin <--> Gateway["OpenClaw Gateway<br/>(agent + skills)"]
+    Rails -->|broadcast| Browser
+    Rails -->|broadcast| Plugin
 ```
 
-Or use the setup script, which does all of the above and starts the server:
+## Quick start
+
+### 1. Start DashBot
 
 ```sh
-bin/setup
+bin/setup              # install deps, prepare DB, start server
+```
+
+Or step by step:
+
+```sh
+bundle install && npm install
+cp .env.example .env
+bin/rails db:prepare
+```
+
+Fill in `.env`:
+
+```env
+DASHBOT_PASSWORD=<pick a password>
+DASHBOT_API_TOKEN=<generate with: ruby -e "require 'securerandom'; puts SecureRandom.hex(32)">
+```
+
+Start the server:
+
+```sh
+bin/dev                # Rails on :3000, Vite HMR on :5173
+```
+
+### 2. Connect OpenClaw
+
+Requires an [OpenClaw](https://openclaw.ai/) gateway. Clone and install the plugin:
+
+```sh
+git clone https://github.com/eddanger/dashbot-openclaw.git
+cd dashbot-openclaw
+npm install
+```
+
+Install into OpenClaw and configure:
+
+```sh
+openclaw plugins install -l /path/to/dashbot-openclaw
+
+# Point the plugin at your DashBot server
+openclaw config set channels.dashbot.enabled true
+openclaw config set channels.dashbot.url http://localhost:3000
+openclaw config set channels.dashbot.token <your DASHBOT_API_TOKEN>
+```
+
+Restart the gateway to pick up the plugin:
+
+```sh
+openclaw gateway restart
+```
+
+### 3. Verify
+
+1. Open `http://localhost:3000` and log in
+2. Type a message in the chat
+3. The OpenClaw gateway logs should show `[default] inbound: <your message>`
+4. The agent processes and responds — the reply appears in the dashboard in real-time
+
+Check gateway logs:
+
+```sh
+openclaw logs
 ```
 
 ## Running tests
 
 ```sh
-# Rails tests (Minitest)
-bin/rails test
-
-# System tests (requires vite build first)
-npx vite build && bin/rails test:system
-
-# Frontend tests (Vitest)
-npm test
-
-# TypeScript type-check
-npm run check
-
-# Ruby linting
-bin/rubocop
-
-# Full CI suite
-bin/ci
+bin/rails test         # Rails (Minitest)
+npm test               # Frontend (Vitest)
+npm run check          # TypeScript
+bin/rubocop            # Ruby linting
+bin/ci                 # Full CI suite
 ```
 
 ## Environment variables
 
-Copy the example file and fill in values:
+Copy `.env.example` to `.env`. Key variables:
 
-```sh
-cp .env.example .env
-```
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `DASHBOT_PASSWORD` | Yes (seed) | Admin user password |
+| `DASHBOT_API_TOKEN` | Yes (plugin) | Shared secret for plugin auth (Action Cable + REST) |
+| `RAILS_MASTER_KEY` | Yes (prod) | Decrypts credentials |
 
-| Variable | Required | Default | Purpose |
-|----------|----------|---------|---------|
-| `DASHBOT_PASSWORD` | Yes (seed) | — | Password for the initial admin user |
-| `RAILS_MASTER_KEY` | Yes (prod) | — | Decrypts `credentials.yml.enc` |
-| `SECRET_KEY_BASE` | Alt to above | — | Alternative to master key for PaaS deployments |
-| `PORT` | No | 3000 | Puma listen port |
-| `RAILS_MAX_THREADS` | No | 3 | Thread pool size |
-| `WEB_CONCURRENCY` | No | 1 | Puma worker processes |
-| `SOLID_QUEUE_IN_PUMA` | No | — | Run background jobs in web process |
-| `JOB_CONCURRENCY` | No | 1 | Solid Queue worker count |
-| `RAILS_LOG_LEVEL` | No | info | Log verbosity |
+See `.env.example` for the full list.
 
-## Production deployment
+## Documentation
 
-### Docker
+| Doc | Contents |
+|-----|----------|
+| [OpenClaw Integration](docs/openclaw.md) | Architecture, ChatChannel, connection auth, plugin setup |
+| [REST API](docs/api.md) | Endpoint reference with request/response examples |
+| [Deployment](docs/deployment.md) | Docker, Kamal, Dokku, persistent storage |
 
-Build the image:
+## OpenClaw plugin
 
-```sh
-docker build -t dashbot .
-```
+The channel plugin that connects OpenClaw to DashBot lives in a separate repo:
 
-Run with required environment variables:
-
-```sh
-docker run -d \
-  -p 80:80 \
-  -e RAILS_MASTER_KEY=<your-master-key> \
-  -e DASHBOT_PASSWORD=<your-password> \
-  -v dashbot-storage:/rails/storage \
-  --name dashbot \
-  dashbot
-```
-
-The entrypoint runs `db:prepare` automatically on startup. To seed the initial admin user:
-
-```sh
-docker exec dashbot bin/rails db:seed
-```
-
-### Persistent storage
-
-Dashbot uses SQLite, so the `storage/` directory must be persisted across container restarts. Mount a volume to `/rails/storage` as shown above.
-
-### Health check
-
-The `/up` endpoint returns 200 when the app is running and the database is available.
-
-### PaaS notes
-
-**Kamal** — The Dockerfile is compatible with Kamal out of the box. Add your deploy config in `config/deploy.yml`.
-
-**Dokku** — Push the repo to your Dokku remote. Set env vars with `dokku config:set`. Mount persistent storage for SQLite with `dokku storage:mount`.
+[`dashbot-openclaw`](https://github.com/eddanger/dashbot-openclaw) — TypeScript Action Cable client that bridges the OpenClaw agent gateway to the DashBot dashboard in real-time. See its README for plugin-specific docs.
 
 ## Tech stack
 
@@ -120,6 +126,7 @@ The `/up` endpoint returns 200 when the app is running and the database is avail
 - **Frontend:** React 19, TypeScript 5.9, Vite 7, Tailwind v4
 - **Bridge:** Inertia.js
 - **UI:** shadcn/ui (New York style), Lucide icons
+- **Real-time:** Action Cable (async dev, Solid Cable production)
 - **Background jobs:** Solid Queue
 - **Caching:** Solid Cache
 - **Web server:** Puma + Thruster

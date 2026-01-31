@@ -14,6 +14,7 @@ gem "bcrypt"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 # Use the database-backed adapters for Rails.cache and Active Job
+gem "solid_cable"
 gem "solid_cache"
 gem "solid_queue"
 
