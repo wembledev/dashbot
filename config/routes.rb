@@ -37,6 +37,11 @@ Rails.application.routes.draw do
     get  "cards/pending", to: "cards#pending"
   end
 
+  # Settings API (token auth - model selection, memory management)
+  post "api/settings/model", to: "settings_api#update_model", defaults: { format: :json }
+  post "api/memory/save", to: "settings_api#save_memory", defaults: { format: :json }
+  post "api/memory/reindex", to: "settings_api#reindex_memory", defaults: { format: :json }
+
   # Health
   get "up" => "rails/health#show", as: :rails_health_check
 

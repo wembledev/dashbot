@@ -61,7 +61,7 @@ config/
 - **Inertia types**: `app/frontend/types/index.ts`
 - **Background jobs**: solid_queue; **Caching**: solid_cache
 
-## Status Page (Garbo)
+## Status Page
 
 Real-time OpenClaw agent monitoring at `/status`. Data flows entirely over WebSocket — no polling.
 

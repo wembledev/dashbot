@@ -1,20 +1,20 @@
 # Agentic Cards — Dashboard as Control Surface
 
 ## Vision
-Dashbot becomes a lightweight agentic interface where Garbo can push decisions/reviews to Mike and receive structured responses back.
+Dashbot becomes a lightweight agentic interface where your AI agent can push decisions/reviews to you and receive structured responses back.
 
 ## Flow
-1. Garbo needs Mike to review/decide something
-2. Garbo sends a Telegram nudge: "New item in your dashboard"
-3. Mike opens dashbot, sees an actionable card
-4. Mike clicks an action (Yes/No, Approve/Reject, etc.)
+1. Agent needs you to review/decide something
+2. Agent sends a notification: "New item in your dashboard"
+3. You open dashbot, see an actionable card
+4. You click an action (Yes/No, Approve/Reject, etc.)
 5. Card action triggers a **system event** back to the agent (NOT a chat message)
 6. Agent processes the response, can send follow-up cards if needed
 7. Loop continues until resolved
 
 ## Key Design Decisions
 - **Card actions → system events**, not chat messages. The agent receives structured callbacks.
-- **Telegram as notification layer** — "check your dashboard" pings
+- **Notifications as a separate layer** — "check your dashboard" pings via Telegram, SMS, etc.
 - **Cards are the interaction unit** — each card is a discrete decision/review
 - **Follow-up cards** — agent can chain multiple cards for multi-step workflows
 - **Keep it simple** — start with confirm (yes/no) cards, expand later
@@ -44,15 +44,15 @@ Agent processes → Optional follow-up card
 - [ ] Cards rendered in chat feed with metadata
 - [ ] Agent can push cards from any session (main, cron, subagent)
 
-### Phase 3: Telegram Notifications
-- [ ] When a new card is pushed, Garbo sends Telegram: "New item in your dashboard"
+### Phase 3: Notifications
+- [ ] When a new card is pushed, agent sends a notification: "New item in your dashboard"
 - [ ] Configurable notification preferences
 
 ## Future Settings Panel Items
 - **Communication style**: emoji reactions on/off, message batching (queue & summarize)
 - **Memory management**: auto-save frequency (minutes/hours/days/weeks), compression schedule
 - **Memory summaries**: daily/weekly/monthly auto-summaries with review cards
-- **Notification preferences**: what triggers a Telegram ping
+- **Notification preferences**: what triggers a ping
 - **Agent personality**: verbosity, formality, proactive level
 
 ## Branch

@@ -128,7 +128,7 @@ bin/dev
 ### 3. Install and configure the OpenClaw plugin
 
 ```sh
-git clone https://github.com/eddanger/dashbot-openclaw.git
+git clone https://github.com/wembledev/dashbot-openclaw.git
 cd dashbot-openclaw
 npm install
 
@@ -219,7 +219,7 @@ curl -s -X POST http://localhost:3000/api/messages/respond \
 
 ## OpenClaw plugin repo
 
-The plugin lives in a separate repo: [`dashbot-openclaw`](https://github.com/eddanger/dashbot-openclaw)
+The plugin lives in a separate repo: [`dashbot-openclaw`](https://github.com/wembledev/dashbot-openclaw)
 
 ```mermaid
 graph TD
@@ -233,4 +233,4 @@ graph TD
     Out -->|fallback HTTP| API[DashBot /api/messages/respond]
 ```
 
-See the [plugin README](https://github.com/eddanger/dashbot-openclaw) for the full configuration reference, Action Cable protocol details, and development setup.
+See the [plugin README](https://github.com/wembledev/dashbot-openclaw) for the full configuration reference, Action Cable protocol details, and development setup.

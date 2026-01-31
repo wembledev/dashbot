@@ -108,7 +108,7 @@ describe("StatusIndex", () => {
 
   it("renders the page title", () => {
     renderWithProvider(<StatusIndex status_data={mockStatusData} />)
-    expect(screen.getByText("Garbo Status")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Agent Status" })).toBeInTheDocument()
   })
 
   it("renders the navigation", () => {
@@ -118,7 +118,7 @@ describe("StatusIndex", () => {
 
   it("renders all widget titles", () => {
     renderWithProvider(<StatusIndex status_data={mockStatusData} />)
-    expect(screen.getByText("Agent Status")).toBeInTheDocument()
+    expect(screen.getAllByText("Agent Status").length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText("Live Token Burn")).toBeInTheDocument()
     expect(screen.getByText("Session Health")).toBeInTheDocument()
     expect(screen.getByText("Scheduled Tasks")).toBeInTheDocument()

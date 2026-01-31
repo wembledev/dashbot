@@ -118,7 +118,7 @@ export default function StatusIndex({ status_data: initialData }: Props) {
           <div className="flex items-center justify-between mb-3 sm:mb-6 mt-2 sm:mt-4">
             <div>
               <h1 className="text-lg sm:text-2xl font-light text-dashbot-text tracking-wide">
-                Garbo Status
+                Agent Status
               </h1>
               <p className="text-dashbot-muted text-[11px] sm:text-sm mt-0.5 sm:mt-1">
                 Real-time agent monitoring dashboard

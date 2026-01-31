@@ -1,8 +1,40 @@
 # DashBot
 
-AI-enabled dashboard utility for your car, gadget, or browser.
+A real-time dashboard that gives you a window into your [OpenClaw](https://openclaw.ai/) AI assistant — chat, monitor status, and interact with agent-driven cards from any browser.
 
-Born during a commute — I was driving on FSD and wanted to chat with my [OpenClaw](https://openclaw.ai/) server at home to vibe code in traffic. That session produced a working real-time feedback dashboard, deployed to a subdomain and opened in my Tesla's browser. DashBot takes that proof of concept and rebuilds it on proper foundations — with a plugin widget system so I can keep vibe-coding on future commutes, and open-sourced for anyone who wants to try it.
+* **Connected:** Plugs into your OpenClaw gateway via the [dashbot-openclaw](https://github.com/wembledev/dashbot-openclaw) plugin for live two-way communication.
+* **Mobile-first:** Designed for Tesla browsers, phones, and tablets — works great on desktop too.
+* **Extensible:** Widget system for custom status panels, agentic cards, and integrations.
+
+[![CI][ci-badge]][ci-url]
+[![Ruby][ruby-badge]][ruby-url]
+[![Rails][rails-badge]][rails-url]
+[![License: MIT][mit-badge]][mit-url]
+
+[ci-badge]: https://github.com/wembledev/dashbot/actions/workflows/ci.yml/badge.svg?branch=main
+[ci-url]: https://github.com/wembledev/dashbot/actions/workflows/ci.yml
+[ruby-badge]: https://img.shields.io/badge/Ruby-4.0-red.svg
+[ruby-url]: https://www.ruby-lang.org/
+[rails-badge]: https://img.shields.io/badge/Rails-8.1-red.svg
+[rails-url]: https://rubyonrails.org/
+[mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
+[mit-url]: https://github.com/wembledev/dashbot/blob/main/LICENSE
+
+## How It Works
+
+```mermaid
+graph TD
+    Dashboard["🖥️ Dashboard"]
+    DashBot["⚡ DashBot"]
+    Plugin["🔌 dashbot-openclaw plugin"]
+    Gateway["🤖 OpenClaw Gateway"]
+
+    Dashboard <--> DashBot
+    DashBot <--> Plugin
+    Plugin <--> Gateway
+```
+
+Your OpenClaw AI agent runs on the gateway. The [dashbot-openclaw](https://github.com/wembledev/dashbot-openclaw) plugin connects it to DashBot over WebSockets, streaming chat messages, status updates, and agentic card interactions in real time. Open the dashboard in any browser to see what your agent is up to.
 
 ## Screenshots
 
@@ -28,21 +60,30 @@ Born during a commute — I was driving on FSD and wanted to chat with my [OpenC
 
 </details>
 
-```mermaid
-graph LR
-    Browser["Dashboard<br/>(React)"] <-->|Action Cable<br/>session auth| Rails["DashBot Rails<br/>+ SQLite"]
-    Plugin["OpenClaw Plugin"] <-->|Action Cable<br/>token auth| Rails
-    Plugin <--> Gateway["OpenClaw Gateway<br/>(agent + skills)"]
-    Rails -->|broadcast| Browser
-    Rails -->|broadcast| Plugin
-```
+## Features
 
-## Quick start
+- 💬 **Chat** — Talk to your AI agent with real-time streaming responses
+- 📊 **Status dashboard** — Monitor agent health, memory, token usage, and cron jobs
+- 🎯 **Agentic cards** — Interactive prompt/response widgets for structured AI actions
+- 🔌 **OpenClaw plugin** — Drop-in integration via [dashbot-openclaw](https://github.com/wembledev/dashbot-openclaw)
+- 🔐 **QR code login** — Scan to authenticate from any device
+- 🌙 **Dark mode** — Full theme support with system preference detection
+- 📱 **Responsive** — Mobile-first design that scales to desktop
 
-### 1. Start DashBot
+## Getting Started
+
+### Prerequisites
+
+- Ruby 4.0+
+- Node.js 22+
+- SQLite3
+
+### Setup
 
 ```sh
-bin/setup              # install deps, prepare DB, start server
+git clone https://github.com/wembledev/dashbot.git
+cd dashbot
+bin/setup              # install deps, prepare DB
 ```
 
 Or step by step:
@@ -53,80 +94,53 @@ cp .env.example .env
 bin/rails db:prepare
 ```
 
-Fill in `.env`:
+Configure `.env`:
 
 ```env
 DASHBOT_PASSWORD=<pick a password>
 DASHBOT_API_TOKEN=<generate with: ruby -e "require 'securerandom'; puts SecureRandom.hex(32)">
 ```
 
-Start the server:
+### Run
 
 ```sh
 bin/dev                # Rails on :3000, Vite HMR on :5173
 ```
 
-### 2. Connect OpenClaw
+Open `http://localhost:3000` and log in.
 
-Requires an [OpenClaw](https://openclaw.ai/) gateway. Clone and install the plugin:
+### Connect Your Agent
 
-```sh
-git clone https://github.com/eddanger/dashbot-openclaw.git
-cd dashbot-openclaw
-npm install
-```
+DashBot connects to your AI assistant via the [dashbot-openclaw](https://github.com/wembledev/dashbot-openclaw) plugin. Install the plugin into your OpenClaw gateway, point it at your DashBot instance, and you're live. See the [plugin README](https://github.com/wembledev/dashbot-openclaw) for setup.
 
-Install into OpenClaw and configure:
-
-```sh
-openclaw plugins install -l /path/to/dashbot-openclaw
-
-# Point the plugin at your DashBot server
-openclaw config set channels.dashbot.enabled true
-openclaw config set channels.dashbot.url http://localhost:3000
-openclaw config set channels.dashbot.token <your DASHBOT_API_TOKEN>
-```
-
-Restart the gateway to pick up the plugin:
-
-```sh
-openclaw gateway restart
-```
-
-### 3. Verify
-
-1. Open `http://localhost:3000` and log in
-2. Type a message in the chat
-3. The OpenClaw gateway logs should show `[default] inbound: <your message>`
-4. The agent processes and responds — the reply appears in the dashboard in real-time
-
-Check gateway logs:
-
-```sh
-openclaw logs
-```
-
-## Running tests
+## Testing
 
 ```sh
 bin/rails test         # Rails (Minitest)
 npm test               # Frontend (Vitest)
-npm run check          # TypeScript
+npm run check          # TypeScript type checking
 bin/rubocop            # Ruby linting
 bin/ci                 # Full CI suite
 ```
 
-## Environment variables
+## Deployment
 
-Copy `.env.example` to `.env`. Key variables:
+DashBot deploys as a standard Rails 8 app with SQLite. See [docs/deployment.md](docs/deployment.md) for Docker, Kamal, and Dokku instructions.
 
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `DASHBOT_PASSWORD` | Yes (seed) | Admin user password |
-| `DASHBOT_API_TOKEN` | Yes (plugin) | Shared secret for plugin auth (Action Cable + REST) |
-| `RAILS_MASTER_KEY` | Yes (prod) | Decrypts credentials |
+## Architecture
 
-See `.env.example` for the full list.
+DashBot is a Rails 8 monolith with a React frontend, connected via Inertia.js:
+
+| Layer | Technology |
+|-------|-----------|
+| **Backend** | Rails 8.1, Ruby 4.0, SQLite3 |
+| **Frontend** | React 19, TypeScript, Vite 7, Tailwind v4 |
+| **Bridge** | Inertia.js (server-driven SPA) |
+| **UI** | shadcn/ui, Lucide icons |
+| **Real-time** | Action Cable (Solid Cable in production) |
+| **Jobs** | Solid Queue |
+| **Caching** | Solid Cache |
+| **Server** | Puma + Thruster |
 
 ## Documentation
 
@@ -136,19 +150,15 @@ See `.env.example` for the full list.
 | [REST API](docs/api.md) | Endpoint reference with request/response examples |
 | [Deployment](docs/deployment.md) | Docker, Kamal, Dokku, persistent storage |
 
-## OpenClaw plugin
+## Contributing
 
-The channel plugin that connects OpenClaw to DashBot lives in a separate repo:
+Contributions are welcome! Please:
 
-[`dashbot-openclaw`](https://github.com/eddanger/dashbot-openclaw) — TypeScript Action Cable client that bridges the OpenClaw agent gateway to the DashBot dashboard in real-time. See its README for plugin-specific docs.
+1. Fork the repo and create your branch from `main`
+2. Add tests for any new functionality
+3. Ensure the test suite passes (`bin/ci`)
+4. Open a pull request
 
-## Tech stack
+## License
 
-- **Backend:** Rails 8.1, Ruby 4.0.1, SQLite3
-- **Frontend:** React 19, TypeScript 5.9, Vite 7, Tailwind v4
-- **Bridge:** Inertia.js
-- **UI:** shadcn/ui (New York style), Lucide icons
-- **Real-time:** Action Cable (async dev, Solid Cable production)
-- **Background jobs:** Solid Queue
-- **Caching:** Solid Cache
-- **Web server:** Puma + Thruster
+This project is licensed under the [MIT License](LICENSE).
