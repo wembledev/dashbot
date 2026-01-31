@@ -2,9 +2,31 @@
 
 AI-enabled dashboard utility for your car, gadget, or browser.
 
-![DashBot screenshot](docs/images/screenshot.png)
-
 Born during a commute — I was driving on FSD and wanted to chat with my [OpenClaw](https://openclaw.ai/) server at home to vibe code in traffic. That session produced a working real-time feedback dashboard, deployed to a subdomain and opened in my Tesla's browser. DashBot takes that proof of concept and rebuilds it on proper foundations — with a plugin widget system so I can keep vibe-coding on future commutes, and open-sourced for anyone who wants to try it.
+
+## Screenshots
+
+| Chat | Status | Settings |
+|------|--------|----------|
+| ![Chat](docs/screenshots/chat.png) | ![Status](docs/screenshots/status.png) | ![Settings](docs/screenshots/settings.png) |
+
+<details>
+<summary>Desktop views</summary>
+
+**Chat (desktop)**
+![Chat desktop](docs/screenshots/chat-desktop.png)
+
+**Status dashboard (desktop)**
+![Status desktop](docs/screenshots/status-desktop.png)
+
+</details>
+
+<details>
+<summary>Login (QR code)</summary>
+
+![Login](docs/screenshots/login.png)
+
+</details>
 
 ```mermaid
 graph LR
