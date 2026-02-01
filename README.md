@@ -40,25 +40,7 @@ Your OpenClaw AI agent runs on the gateway. The [dashbot-openclaw](https://githu
 
 | Chat | Status | Settings |
 |------|--------|----------|
-| ![Chat](docs/screenshots/chat.png) | ![Status](docs/screenshots/status.png) | ![Settings](docs/screenshots/settings.png) |
-
-<details>
-<summary>Desktop views</summary>
-
-**Chat (desktop)**
-![Chat desktop](docs/screenshots/chat-desktop.png)
-
-**Status dashboard (desktop)**
-![Status desktop](docs/screenshots/status-desktop.png)
-
-</details>
-
-<details>
-<summary>Login (QR code)</summary>
-
-![Login](docs/screenshots/login.png)
-
-</details>
+| ![Chat](docs/screenshots/chat-desktop.jpg) | ![Status](docs/screenshots/status-desktop.jpg) | ![Settings](docs/screenshots/settings.jpg) |
 
 ## Features
 
