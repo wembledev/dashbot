@@ -1,23 +1,35 @@
 import { HelpCircle } from 'lucide-react'
 import { router } from '@inertiajs/react'
+import { useHelpDrawer } from '@/contexts/help-drawer-context'
 
 interface Props {
   topic: string
-  description: string
+  /** @deprecated Use `context` instead */
+  description?: string
+  /** Rich context string sent to backend for better help responses */
+  context?: string
 }
 
-export default function HelpButton({ topic, description }: Props) {
+export default function HelpButton({ topic, description, context }: Props) {
+  const helpDrawer = useHelpDrawer()
+
   const askForHelp = () => {
-    // Navigate to chat with the question as a query param
-    // The chat page will detect it and send it as a message
-    const message = `Explain: ${topic} — ${description}`
-    router.visit(`/dashboard?ask=${encodeURIComponent(message)}`)
+    const richContext = context || description || ''
+
+    if (helpDrawer) {
+      // Open the slide-in help drawer (user stays on current page)
+      helpDrawer.openHelp(topic, richContext)
+    } else {
+      // Fallback: navigate to chat page
+      const message = `💡 Help: ${topic} — ${richContext} Give a concise, helpful explanation.`
+      router.visit(`/dashboard?ask=${encodeURIComponent(message)}`)
+    }
   }
 
   return (
     <button
       onClick={askForHelp}
-      className="p-0.5 rounded-full text-dashbot-muted hover:text-dashbot-text transition-colors opacity-50 hover:opacity-100"
+      className="p-1 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
       aria-label={`Help: ${topic}`}
       title={`Ask about ${topic}`}
     >

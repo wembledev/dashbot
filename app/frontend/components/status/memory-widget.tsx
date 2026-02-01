@@ -141,7 +141,7 @@ export default function MemoryWidget({ data }: Props) {
         <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-dashbot-text">
           <Brain className="size-4 sm:size-5 text-cyan-400" />
           {title}
-          <HelpButton topic="Memory" description="Search index health, files indexed, vector embeddings" />
+          <HelpButton topic="Memory" context={`Memory ${data.backend === 'qmd' ? 'QMD' : 'OpenClaw'} backend: ${data.file_count} files indexed, ${data.vector_count} vectors, index size ${data.index_size}, last updated ${data.updated}. What is the memory system and how does it work?`} />
         </CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>

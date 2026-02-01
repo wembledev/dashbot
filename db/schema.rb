@@ -10,7 +10,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_31_072235) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_01_155649) do
+  create_table "agent_events", force: :cascade do |t|
+    t.string "agent_label"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "event_type", null: false
+    t.json "metadata"
+    t.string "model"
+    t.string "session_key"
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_agent_events_on_created_at"
+    t.index ["event_type"], name: "index_agent_events_on_event_type"
+    t.index ["session_key"], name: "index_agent_events_on_session_key"
+  end
+
   create_table "cards", force: :cascade do |t|
     t.string "card_type", null: false
     t.integer "chat_session_id", null: false
@@ -85,8 +99,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_31_072235) do
     t.datetime "updated_at", null: false
   end
 
-  add_foreign_key "cards", "chat_sessions"
-  add_foreign_key "cards", "messages"
   add_foreign_key "chat_sessions", "profiles"
   add_foreign_key "chat_sessions", "users"
   add_foreign_key "messages", "chat_sessions"

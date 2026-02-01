@@ -10,6 +10,16 @@ vi.mock("@inertiajs/react", () => ({
   usePage: () => ({ url: "/status" }),
 }))
 
+vi.mock("@/lib/cable", () => ({
+  cable: {
+    subscriptions: {
+      create: vi.fn(() => ({
+        unsubscribe: vi.fn(),
+      })),
+    },
+  },
+}))
+
 function renderWithProvider(component: React.ReactElement) {
   return render(<UnreadProvider>{component}</UnreadProvider>)
 }
@@ -39,19 +49,9 @@ const mockStatusData = {
         target: "isolated",
         agent: "default",
       },
-      {
-        id: "2",
-        name: "Session health check",
-        schedule: "cron */30 * * * *",
-        next_run: "in 12m",
-        last_run: "18m ago",
-        status: "skipped",
-        target: "main",
-        agent: "default",
-      },
     ],
     pending_count: 0,
-    next_job: "Session health check",
+    next_job: "Morning briefing",
     cron_health: "healthy" as const,
     cron_errors: [],
   },
@@ -92,10 +92,22 @@ const mockStatusData = {
   fetched_at: "2026-01-30 19:30:00 PST",
 }
 
+const mockEvents = [
+  {
+    id: 1,
+    event_type: "spawned",
+    agent_label: "test-task",
+    session_key: "agent:main:subagent:abc123",
+    model: "claude-opus-4-5",
+    description: "Test task for building something",
+    metadata: null,
+    created_at: new Date().toISOString(),
+  },
+]
+
 describe("StatusIndex", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Mock fetch for polling
     global.fetch = vi.fn().mockResolvedValue({
       status: 200,
       json: () => Promise.resolve(mockStatusData),
@@ -107,36 +119,36 @@ describe("StatusIndex", () => {
   })
 
   it("renders the page title", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} />)
-    expect(screen.getByRole("heading", { name: "Agent Status" })).toBeInTheDocument()
+    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
+    expect(screen.getByRole("heading", { name: "Status" })).toBeInTheDocument()
   })
 
-  it("renders the navigation", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} />)
-    expect(screen.getByText("DashBot")).toBeInTheDocument()
+  it("renders hierarchy and activity widgets", () => {
+    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
+    expect(screen.getByText("Agent Hierarchy")).toBeInTheDocument()
+    expect(screen.getByText("Activity Log")).toBeInTheDocument()
   })
 
-  it("renders all widget titles", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} />)
-    expect(screen.getAllByText("Agent Status").length).toBeGreaterThanOrEqual(1)
+  it("renders supporting widgets", () => {
+    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
     expect(screen.getByText("Live Token Burn")).toBeInTheDocument()
     expect(screen.getByText("Session Health")).toBeInTheDocument()
-    expect(screen.getByText("Scheduled Tasks")).toBeInTheDocument()
+    expect(screen.getByText("Cron Jobs")).toBeInTheDocument()
     expect(screen.getByText("Memory (QMD)")).toBeInTheDocument()
   })
 
   it("displays the fetched_at timestamp", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} />)
+    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
     expect(screen.getByText(/2026-01-30 19:30:00 PST/)).toBeInTheDocument()
   })
 
   it("has a refresh button", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} />)
+    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
     expect(screen.getByLabelText("Refresh status")).toBeInTheDocument()
   })
 
   it("renders the subtitle", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} />)
-    expect(screen.getByText("Real-time agent monitoring dashboard")).toBeInTheDocument()
+    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
+    // Subtitle removed in density pass — page header is now compact
   })
 })

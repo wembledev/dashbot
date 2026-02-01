@@ -3,6 +3,7 @@
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant car (&:is(.car-mode *));
 
 @theme {
   --color-dashbot-bg: var(--dashbot-bg);
@@ -41,12 +42,12 @@
 
 @layer base {
   html {
-    font-size: 16px;
+    font-size: 14px;
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     html {
-      font-size: 24px;
+      font-size: 13px;
     }
   }
 
@@ -57,6 +58,7 @@
   body {
     @apply bg-dashbot-bg text-dashbot-text antialiased;
     font-weight: 300;
+    line-height: 1.4;
     scrollbar-color: var(--color-dashbot-surface-solid) #000000;
     scrollbar-width: thin;
   }
@@ -64,33 +66,64 @@
 
 @layer components {
   .btn {
-    @apply px-6 py-3 rounded-full font-semibold tracking-wide transition-all duration-200;
-    min-height: 48px;
+    @apply px-4 py-1.5 rounded-full font-semibold tracking-wide transition-all duration-200;
+    min-height: 32px;
   }
 
   .btn-primary {
     @apply bg-dashbot-primary hover:bg-dashbot-primary-hover text-white;
-    box-shadow: 0 0 20px rgba(62,106,225,0.3);
+    box-shadow: 0 0 12px rgba(62,106,225,0.25);
   }
 
   .btn-outline {
-    @apply border-2 border-dashbot-border hover:border-dashbot-accent bg-transparent;
+    @apply border border-dashbot-border hover:border-dashbot-accent bg-transparent;
   }
 
   .card {
-    @apply bg-dashbot-surface backdrop-blur-xl rounded-2xl p-5 border border-dashbot-border;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    @apply bg-dashbot-surface backdrop-blur-xl rounded-lg p-3 border border-dashbot-border;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
   }
 
   .input {
-    @apply w-full px-4 py-3 bg-dashbot-surface border-2 border-dashbot-border rounded-xl text-white focus:border-dashbot-primary focus:outline-none;
-    min-height: 48px;
+    @apply w-full px-3 py-1.5 bg-dashbot-surface border border-dashbot-border rounded-lg text-white focus:border-dashbot-primary focus:outline-none;
+    min-height: 32px;
     font-weight: 300;
   }
 }
 
+/* Car Mode — larger everything, higher contrast, simplified */
+.car-mode {
+  font-size: 20px;
+}
+
+.car-mode .card,
+.car-mode [data-slot="card"] {
+  border-width: 2px;
+}
+
+/* Ensure touch targets are at least 44px in car mode */
+.car-mode button,
+.car-mode [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Higher contrast text in car mode */
+.car-mode {
+  --dashbot-muted: rgba(255,255,255,0.6);
+}
+
+[data-theme="light"].car-mode {
+  --dashbot-muted: rgba(0,0,0,0.6);
+}
+
 .hide-scrollbar {
   scrollbar-width: none;
+}
+
+/* Safe area padding for mobile bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @theme inline {

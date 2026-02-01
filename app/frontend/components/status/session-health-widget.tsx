@@ -1,6 +1,7 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import HelpButton from './help-button'
 import { HeartPulse, Cpu, Clock } from 'lucide-react'
+import { friendlySessionLabel } from '@/lib/sessions'
 import type { SessionHealthData, SessionInfo } from '@/types/status'
 
 interface Props {
@@ -21,7 +22,7 @@ export default function SessionHealthWidget({ data, sessions }: Props) {
         <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-dashbot-text">
           <HeartPulse className="size-4 sm:size-5 text-red-400" />
           Session Health
-          <HelpButton topic="Session Health" description="Main session uptime, context usage, all active sessions" />
+          <HelpButton topic="Session Health" context={`Session health showing: uptime=${data.uptime}, model=${data.model}, context=${data.tokens} (${data.context_percent}%), ${sessions.length} total sessions. What is session health? What does context usage mean?`} />
         </CardTitle>
         <CardDescription>Active sessions overview</CardDescription>
       </CardHeader>
@@ -67,10 +68,8 @@ export default function SessionHealthWidget({ data, sessions }: Props) {
                     key={session.key}
                     className="flex items-center justify-between p-1 sm:p-1.5 rounded bg-[rgba(255,255,255,0.03)] text-[10px] sm:text-xs"
                   >
-                    <span className="text-dashbot-text truncate flex-1 mr-1.5 sm:mr-2 font-mono">
-                      {session.key.length > 30
-                        ? `...${session.key.slice(-25)}`
-                        : session.key}
+                    <span className="text-dashbot-text truncate flex-1 mr-1.5 sm:mr-2">
+                      {friendlySessionLabel(session.key)}
                     </span>
                     <div className="flex items-center gap-1.5 sm:gap-2 text-dashbot-muted shrink-0">
                       <span className="hidden sm:inline">{session.model}</span>

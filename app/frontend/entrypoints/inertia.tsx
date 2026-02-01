@@ -1,20 +1,16 @@
 import { createInertiaApp, type ResolvedComponent } from '@inertiajs/react'
-import { StrictMode } from 'react'
+import { StrictMode, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { UnreadProvider } from '../contexts/unread-context'
+import { CarModeProvider } from '../contexts/car-mode-context'
+import { HelpDrawerProvider } from '../contexts/help-drawer-context'
+import AppLayout from '../layouts/AppLayout'
 import '../styles/app.css'
 
+/** Pages that should NOT use the persistent SPA layout (e.g. auth pages). */
+const NO_LAYOUT_PAGES = new Set(['auth/login', 'auth/qr_login'])
+
 void createInertiaApp({
-  // Set default page title
-  // see https://inertia-rails.dev/guide/title-and-meta
-  //
-  // title: title => title ? `${title} - App` : 'App',
-
-  // Disable progress bar
-  //
-  // see https://inertia-rails.dev/guide/progress-indicators
-  // progress: false,
-
   resolve: (name) => {
     const pages = import.meta.glob<{default: ResolvedComponent}>('../pages/**/*.tsx', {
       eager: true,
@@ -24,11 +20,10 @@ void createInertiaApp({
       console.error(`Missing Inertia page component: '${name}.tsx'`)
     }
 
-    // To use a default layout, import the Layout component
-    // and use the following line.
-    // see https://inertia-rails.dev/guide/pages#default-layouts
-    //
-    // page.default.layout ||= (page: ReactNode) => (<Layout>{page}</Layout>)
+    // Apply persistent AppLayout to all pages except auth
+    if (page && !NO_LAYOUT_PAGES.has(name)) {
+      page.default.layout ||= (page: ReactNode) => <AppLayout>{page}</AppLayout>
+    }
 
     return page
   },
@@ -36,9 +31,13 @@ void createInertiaApp({
   setup({ el, App, props }) {
     createRoot(el).render(
       <StrictMode>
-        <UnreadProvider>
-          <App {...props} />
-        </UnreadProvider>
+        <CarModeProvider>
+          <UnreadProvider>
+            <HelpDrawerProvider>
+              <App {...props} />
+            </HelpDrawerProvider>
+          </UnreadProvider>
+        </CarModeProvider>
       </StrictMode>
     )
   },

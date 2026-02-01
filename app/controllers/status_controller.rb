@@ -3,7 +3,8 @@
 class StatusController < ApplicationController
   def index
     render inertia: "status/index", props: {
-      status_data: fetch_status_data
+      status_data: fetch_status_data,
+      initial_events: AgentEvent.recent.limit(50).map(&:as_broadcast)
     }
   end
 
@@ -12,9 +13,37 @@ class StatusController < ApplicationController
     render json: fetch_status_data
   end
 
+  # JSON events endpoint (cookie-auth for dashboard)
+  def events
+    limit = [ params.fetch(:limit, 50).to_i, 100 ].min
+    events = AgentEvent.recent.limit(limit)
+    events = events.since(Time.parse(params[:since])) if params[:since].present?
+
+    render json: { events: events.map(&:as_broadcast) }
+  end
+
   # Session keep-alive endpoint
   def keepalive
     head :ok
+  end
+
+  # DELETE /status/sessions/:key - close a session (cookie-auth for dashboard users)
+  def close_session
+    session_key = params[:key]
+
+    # Don't allow closing the main session
+    if session_key.match?(/agent:\w+:main$/)
+      render json: { error: "Cannot close main session" }, status: :forbidden
+      return
+    end
+
+    # Send kill request to plugin via ActionCable
+    ActionCable.server.broadcast("plugin_commands", {
+      type: "session_kill",
+      session_key: session_key
+    })
+
+    render json: { ok: true, message: "Session close requested", session_key: session_key }
   end
 
   private

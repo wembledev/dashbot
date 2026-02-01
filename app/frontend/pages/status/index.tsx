@@ -1,26 +1,51 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { router } from '@inertiajs/react'
-import Navigation from '@/components/navigation'
 import AgentStatusWidget from '@/components/status/agent-status-widget'
+import AgentHierarchyWidget from '@/components/status/agent-hierarchy-widget'
+import AgentActivityLog from '@/components/status/agent-activity-log'
 import TokenBurnWidget from '@/components/status/token-burn-widget'
 import TasksWidget from '@/components/status/tasks-widget'
 import MemoryWidget from '@/components/status/memory-widget'
 import SessionHealthWidget from '@/components/status/session-health-widget'
-import { RefreshCw } from 'lucide-react'
-import type { StatusData } from '@/types/status'
+import { useCarMode } from '@/contexts/car-mode-context'
+import { RefreshCw, Car } from 'lucide-react'
+import type { StatusData, AgentEvent } from '@/types/status'
 import { cable } from '@/lib/cable'
 import type { Subscription } from '@rails/actioncable'
 
 interface Props {
   status_data: StatusData
+  initial_events: AgentEvent[]
 }
 
-export default function StatusIndex({ status_data: initialData }: Props) {
+function CarModeToggle() {
+  const { carMode, toggleCarMode } = useCarMode()
+
+  return (
+    <button
+      onClick={toggleCarMode}
+      className={`p-1.5 sm:p-2 car:p-3 rounded-full transition-colors ${
+        carMode
+          ? 'bg-blue-600 text-white'
+          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+      }`}
+      aria-label={carMode ? 'Disable car mode' : 'Enable car mode'}
+      title={carMode ? 'Car mode ON' : 'Car mode OFF'}
+    >
+      <Car className="size-3.5 sm:size-4 car:size-5" />
+    </button>
+  )
+}
+
+function StatusContent({ status_data: initialData, initial_events: initialEvents }: Props) {
   const [data, setData] = useState<StatusData>(initialData)
+  const [events, setEvents] = useState<AgentEvent[]>(initialEvents || [])
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [refreshing, setRefreshing] = useState(false)
   const [connected, setConnected] = useState(false)
   const subscriptionRef = useRef<Subscription | null>(null)
+  const eventsSubRef = useRef<Subscription | null>(null)
+  const { carMode } = useCarMode()
 
   const refreshData = useCallback(() => {
     setRefreshing(true)
@@ -44,32 +69,45 @@ export default function StatusIndex({ status_data: initialData }: Props) {
           setLastRefresh(new Date())
         }
       })
-      .catch(() => {
-        // Silently fail - manual refresh
-      })
-      .finally(() => {
-        setRefreshing(false)
-      })
+      .catch(() => {})
+      .finally(() => setRefreshing(false))
   }, [])
 
-  // Subscribe to StatusChannel for real-time updates
+  const handleCloseSession = useCallback((sessionKey: string) => {
+    fetch(`/status/sessions/${encodeURIComponent(sessionKey)}`, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+      },
+      credentials: 'same-origin',
+    })
+      .then(res => res.json())
+      .then(() => {
+        setData(prev => ({
+          ...prev,
+          sessions: prev.sessions.filter(s => s.key !== sessionKey),
+          agent_status: {
+            ...prev.agent_status,
+            session_count: Math.max(0, prev.agent_status.session_count - 1),
+          },
+        }))
+      })
+      .catch(() => {})
+  }, [])
+
+  // Subscribe to StatusChannel for real-time status updates
   useEffect(() => {
-    console.log('[status] Subscribing to StatusChannel')
-    
     subscriptionRef.current = cable.subscriptions.create(
       { channel: 'StatusChannel' },
       {
         connected() {
-          console.log('[status] StatusChannel connected')
           setConnected(true)
         },
         disconnected() {
-          console.log('[status] StatusChannel disconnected')
           setConnected(false)
         },
         received(payload: { type: string; data?: StatusData }) {
           if (payload.type === 'status_update' && payload.data) {
-            console.log('[status] Received status update')
             setData(payload.data)
             setLastRefresh(new Date())
           }
@@ -78,11 +116,27 @@ export default function StatusIndex({ status_data: initialData }: Props) {
     )
 
     return () => {
-      console.log('[status] Unsubscribing from StatusChannel')
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe()
-        subscriptionRef.current = null
+      subscriptionRef.current?.unsubscribe()
+      subscriptionRef.current = null
+    }
+  }, [])
+
+  // Subscribe to AgentEventsChannel for live sub-agent updates
+  useEffect(() => {
+    eventsSubRef.current = cable.subscriptions.create(
+      { channel: 'AgentEventsChannel' },
+      {
+        received(payload: { type: string; event?: AgentEvent }) {
+          if (payload.type === 'new_event' && payload.event) {
+            setEvents(prev => [payload.event!, ...prev].slice(0, 100))
+          }
+        },
       }
+    )
+
+    return () => {
+      eventsSubRef.current?.unsubscribe()
+      eventsSubRef.current = null
     }
   }, [])
 
@@ -109,51 +163,81 @@ export default function StatusIndex({ status_data: initialData }: Props) {
   }, [lastRefresh])
 
   return (
-    <div className="min-h-screen bg-dashbot-bg">
-      <Navigation />
-
-      <main className="pt-14 px-2 sm:px-4 md:px-6 pb-4 sm:pb-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Page header - compact on mobile */}
-          <div className="flex items-center justify-between mb-3 sm:mb-6 mt-2 sm:mt-4">
-            <div>
-              <h1 className="text-lg sm:text-2xl font-light text-dashbot-text tracking-wide">
-                Agent Status
+    <div className="h-full overflow-y-auto bg-zinc-950">
+      <div className="px-2 sm:px-3 pb-3">
+        <div>
+          {/* Page header */}
+          <div className="flex items-center justify-between mb-2 mt-2">
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm sm:text-base car:text-3xl font-medium text-zinc-100">
+                Status
               </h1>
-              <p className="text-dashbot-muted text-[11px] sm:text-sm mt-0.5 sm:mt-1">
-                Real-time agent monitoring dashboard
-              </p>
+              {!carMode && (
+                <span className="text-zinc-600 text-[10px]">
+                  <span className={connected ? 'text-green-400' : 'text-yellow-400'}>●</span> {timeSinceRefresh()}
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <span className="text-dashbot-muted text-[10px] sm:text-xs hidden sm:block">
-                <span className={connected ? 'text-green-400' : 'text-yellow-400'}>●</span> Updated {timeSinceRefresh()}
-              </span>
+            <div className="flex items-center gap-1.5">
+              <CarModeToggle />
               <button
                 onClick={refreshData}
                 disabled={refreshing}
-                className="p-1.5 sm:p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)] transition-colors text-dashbot-muted hover:text-dashbot-text disabled:opacity-50"
+                className="p-1 car:p-3 rounded hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-200 disabled:opacity-50"
                 aria-label="Refresh status"
               >
-                <RefreshCw className={`size-3.5 sm:size-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`size-3.5 car:size-5 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
 
-          {/* Status grid - single column on mobile, responsive on larger screens */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-4 md:gap-6">
-            <AgentStatusWidget data={data.agent_status} />
-            <TokenBurnWidget data={data.token_burn} />
-            <SessionHealthWidget data={data.session_health} sessions={data.sessions} />
-            <TasksWidget data={data.tasks} />
-            <MemoryWidget data={data.memory} />
-          </div>
+          {/* Status grid */}
+          {carMode ? (
+            <div className="space-y-3">
+              <AgentStatusWidget data={data.agent_status} events={events} />
+              <AgentHierarchyWidget
+                data={data.agent_status}
+                sessions={data.sessions}
+                events={events}
+                onCloseSession={handleCloseSession}
+              />
+              <TasksWidget data={data.tasks} />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {/* Top row: Hierarchy + Activity Log */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                <AgentHierarchyWidget
+                  data={data.agent_status}
+                  sessions={data.sessions}
+                  events={events}
+                  onCloseSession={handleCloseSession}
+                />
+                <AgentActivityLog initialEvents={events} />
+              </div>
+
+              {/* Bottom row: Supporting widgets */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                <TokenBurnWidget data={data.token_burn} sessions={data.sessions} />
+                <SessionHealthWidget data={data.session_health} sessions={data.sessions} />
+                <TasksWidget data={data.tasks} />
+                <MemoryWidget data={data.memory} />
+              </div>
+            </div>
+          )}
 
           {/* Footer timestamp */}
-          <div className="mt-3 sm:mt-6 text-center text-dashbot-muted text-[10px] sm:text-xs">
-            Data fetched at {data.fetched_at}
-          </div>
+          {!carMode && (
+            <div className="mt-2 text-center text-zinc-600 text-[9px] font-mono">
+              {data.fetched_at}
+            </div>
+          )}
         </div>
-      </main>
+      </div>
     </div>
   )
+}
+
+export default function StatusIndex(props: Props) {
+  return <StatusContent {...props} />
 }

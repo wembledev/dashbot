@@ -1,13 +1,15 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import HelpButton from './help-button'
 import { Flame } from 'lucide-react'
-import type { TokenBurnData } from '@/types/status'
+import { friendlySessionLabel } from '@/lib/sessions'
+import type { TokenBurnData, SessionInfo } from '@/types/status'
 
 interface Props {
   data: TokenBurnData
+  sessions?: SessionInfo[]
 }
 
-export default function TokenBurnWidget({ data }: Props) {
+export default function TokenBurnWidget({ data, sessions = [] }: Props) {
   const contextColor = data.main_context_percent > 80
     ? 'text-red-400'
     : data.main_context_percent > 60
@@ -20,19 +22,13 @@ export default function TokenBurnWidget({ data }: Props) {
         <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-dashbot-text">
           <Flame className="size-4 sm:size-5 text-orange-400" />
           Live Token Burn
-          <HelpButton topic="Token Burn" description="How many tokens used, context window usage, cost" />
+          <HelpButton topic="Token Usage" context={`Token usage panel showing: Main Session ${data.main_tokens} tokens, context window at ${data.main_context_percent}%. Model: ${data.model}. Total sessions: ${data.total_sessions}. What do these numbers mean? When should I be concerned? What happens when context window fills up?`} />
         </CardTitle>
         <CardDescription>Token usage and context window</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-2.5 sm:space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-dashbot-muted text-xs sm:text-sm">Main Session</span>
-            <span className="text-dashbot-text text-xs sm:text-sm font-medium font-mono">
-              {data.main_tokens}
-            </span>
-          </div>
-
+          {/* Main context window bar */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
               <span className="text-dashbot-muted text-xs sm:text-sm">Context Window</span>
@@ -58,12 +54,36 @@ export default function TokenBurnWidget({ data }: Props) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-dashbot-muted text-xs sm:text-sm">Total Sessions</span>
-            <span className="text-dashbot-text text-xs sm:text-sm font-medium">
-              {data.total_sessions}
-            </span>
-          </div>
+          {/* Per-session breakdown */}
+          {sessions.length > 0 && (
+            <div className="pt-1 sm:pt-2 border-t border-dashbot-border">
+              <div className="text-dashbot-muted text-[10px] sm:text-xs font-medium mb-1.5 sm:mb-2 uppercase tracking-wider">
+                Sessions ({sessions.length})
+              </div>
+              <div className="space-y-1 sm:space-y-1.5 max-h-36 sm:max-h-48 overflow-y-auto">
+                {sessions.map((session) => {
+                  const pctColor = session.context_percent > 80 ? 'text-red-400' :
+                    session.context_percent > 60 ? 'text-yellow-400' : 'text-green-400'
+                  return (
+                    <div
+                      key={session.key}
+                      className="flex items-center justify-between p-1 sm:p-1.5 rounded bg-[rgba(255,255,255,0.03)] text-[10px] sm:text-xs"
+                    >
+                      <span className="text-dashbot-text truncate flex-1 mr-1.5 sm:mr-2">
+                        {friendlySessionLabel(session.key)}
+                      </span>
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-dashbot-muted shrink-0">
+                        <span className="font-mono">{session.tokens}</span>
+                        <span className={pctColor}>
+                          {session.context_percent}%
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <span className="text-dashbot-muted text-xs sm:text-sm">Model</span>

@@ -8,6 +8,21 @@ export interface SessionInfo {
   flags: string
 }
 
+// Parsed session type for UI display
+export type SessionType = 'main' | 'cron' | 'subagent' | 'dashbot' | 'channel' | 'unknown'
+export type SessionStatus = 'active' | 'idle' | 'completed' | 'failed'
+export type SessionSafety = 'safe' | 'caution' | 'unsafe'
+
+export interface ParsedSession extends SessionInfo {
+  type: SessionType
+  label: string
+  description: string
+  status: SessionStatus
+  safety: SessionSafety
+  safetyReason: string
+  parentKey?: string  // for sub-agents, the parent session key
+}
+
 export interface CronJob {
   id: string
   name: string
@@ -18,6 +33,9 @@ export interface CronJob {
   target: string
   agent: string
   error?: string
+  enabled?: boolean
+  payload_kind?: string
+  payload_text?: string
 }
 
 export interface CronError {
@@ -79,6 +97,18 @@ export interface SessionHealthData {
   context_percent: number
   tokens: string
   session_key: string
+}
+
+// Agent Events
+export interface AgentEvent {
+  id: number
+  event_type: string
+  agent_label: string | null
+  session_key: string | null
+  model: string | null
+  description: string | null
+  metadata: Record<string, unknown> | null
+  created_at: string
 }
 
 export interface StatusData {
