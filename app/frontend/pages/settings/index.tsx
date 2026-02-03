@@ -3,6 +3,7 @@ import { router } from '@inertiajs/react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Sun, Moon, Trash2, MessageSquare, Brain, Bell, Cpu, LogOut } from 'lucide-react'
 import HelpButton from '@/components/status/help-button'
+import { useCarMode } from '@/contexts/car-mode-context'
 
 function ToggleRow({ label, description, enabled, onToggle }: {
   label: string
@@ -48,22 +49,12 @@ export default function SettingsIndex() {
     return 'dark'
   })
 
-  const [carMode, setCarMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('dashbot_car_mode') === 'true'
-    }
-    return false
-  })
+  const { carMode, toggleCarMode } = useCarMode()
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('dashbot-theme', theme)
   }, [theme])
-
-  useEffect(() => {
-    localStorage.setItem('dashbot_car_mode', String(carMode))
-    document.documentElement.classList.toggle('car-mode', carMode)
-  }, [carMode])
 
   const clearChat = () => {
     if (confirm('Clear all messages? This cannot be undone.')) {
@@ -105,7 +96,7 @@ export default function SettingsIndex() {
                     label="Car Mode"
                     description="Larger text and buttons for driving (Tesla browser)"
                     enabled={carMode}
-                    onToggle={() => setCarMode(prev => !prev)}
+                    onToggle={toggleCarMode}
                   />
                 </div>
               </CardContent>
