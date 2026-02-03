@@ -26,19 +26,19 @@ export default function TopBar({ connected, onMenuToggle, showMenuButton = true 
   }
 
   return (
-    <header className="flex items-center justify-between px-3 sm:px-4 py-2 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/50 shrink-0">
+    <header className="flex items-center justify-between px-3 sm:px-4 py-2 bg-dashbot-bg/80 backdrop-blur-md border-b border-dashbot-border shrink-0">
       {/* Left: mobile menu + logo + connection dot */}
       <div className="flex items-center gap-2.5">
         {showMenuButton && (
           <button
             onClick={onMenuToggle}
-            className="md:hidden p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-colors"
+            className="md:hidden p-1.5 rounded-lg text-dashbot-muted hover:text-dashbot-text hover:bg-dashbot-surface transition-colors"
             aria-label="Toggle sidebar"
           >
             <Menu className="size-5" />
           </button>
         )}
-        <span className="text-sm font-light tracking-wider uppercase text-zinc-200">
+        <span className="text-sm font-light tracking-wider uppercase text-dashbot-text">
           DashBot
         </span>
         <span
@@ -60,7 +60,7 @@ export default function TopBar({ connected, onMenuToggle, showMenuButton = true 
             className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
               isActive(href)
                 ? 'bg-blue-500/15 text-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.15)]'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+                : 'text-dashbot-muted hover:text-dashbot-text hover:bg-dashbot-surface'
             }`}
             aria-current={isActive(href) ? 'page' : undefined}
           >

@@ -81,10 +81,10 @@ export default function DetailPanel({ selection, data, onSelectionChange }: Deta
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-zinc-800/50 flex items-center justify-center mb-4">
+      <div className="w-16 h-16 rounded-2xl bg-dashbot-surface flex items-center justify-center mb-4">
         <Layers className="size-7 text-zinc-600" />
       </div>
-      <p className="text-base text-zinc-400 font-medium">Select an item</p>
+      <p className="text-base text-dashbot-muted font-medium">Select an item</p>
       <p className="text-sm text-zinc-600 mt-1 max-w-[200px]">
         Click an agent, cron, or session in the sidebar to view details
       </p>
@@ -95,10 +95,10 @@ function EmptyState() {
 function NotFound({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-zinc-800/50 flex items-center justify-center mb-4">
+      <div className="w-16 h-16 rounded-2xl bg-dashbot-surface flex items-center justify-center mb-4">
         <Bot className="size-7 text-zinc-600" />
       </div>
-      <p className="text-base text-zinc-400 font-medium">Item not found</p>
+      <p className="text-base text-dashbot-muted font-medium">Item not found</p>
       <p className="text-sm text-zinc-600 mt-1">&ldquo;{label}&rdquo; is no longer available</p>
     </div>
   )

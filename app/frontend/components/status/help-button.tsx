@@ -29,7 +29,7 @@ export default function HelpButton({ topic, description, context }: Props) {
   return (
     <button
       onClick={askForHelp}
-      className="p-1 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+      className="p-1 rounded-lg text-dashbot-muted hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
       aria-label={`Help: ${topic}`}
       title={`Ask about ${topic}`}
     >

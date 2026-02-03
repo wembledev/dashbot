@@ -25,7 +25,7 @@ export default function SidebarNav() {
   }
 
   return (
-    <nav className="px-2 py-2 border-t border-zinc-800/50 space-y-0.5" role="navigation" aria-label="Main navigation">
+    <nav className="px-2 py-2 border-t border-dashbot-border space-y-0.5" role="navigation" aria-label="Main navigation">
       {navItems.map((item) => (
         <Link
           key={item.href}
@@ -33,7 +33,7 @@ export default function SidebarNav() {
           className={`relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
             isActive(item.href)
               ? 'bg-blue-500/15 text-blue-400'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+              : 'text-dashbot-muted hover:text-dashbot-text hover:bg-dashbot-surface'
           }`}
           aria-current={isActive(item.href) ? 'page' : undefined}
         >
@@ -51,7 +51,7 @@ export default function SidebarNav() {
       {/* Logout */}
       <button
         onClick={() => router.delete('/logout')}
-        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-dashbot-muted hover:text-red-400 hover:bg-red-500/10 transition-all"
       >
         <LogOut className="size-4" />
         Logout

@@ -7,6 +7,18 @@ import { HelpDrawerProvider } from '../contexts/help-drawer-context'
 import AppLayout from '../layouts/AppLayout'
 import '../styles/app.css'
 
+// Apply saved theme before first render to prevent flash of wrong theme
+;(() => {
+  const saved = localStorage.getItem('dashbot-theme')
+  if (saved === 'dark' || saved === 'light') {
+    document.documentElement.setAttribute('data-theme', saved)
+  } else {
+    // "system" or not set — resolve from OS preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light')
+  }
+})()
+
 /** Pages that should NOT use the persistent SPA layout (e.g. auth pages). */
 const NO_LAYOUT_PAGES = new Set(['auth/login', 'auth/qr_login'])
 

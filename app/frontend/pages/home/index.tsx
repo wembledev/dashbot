@@ -168,14 +168,14 @@ export default function HomeIndex({ chat_session_id, messages: initialMessages }
   }
 
   return (
-    <div className="relative h-full bg-zinc-950 overflow-hidden flex flex-col">
+    <div className="relative h-full bg-dashbot-bg overflow-hidden flex flex-col">
       {/* Chat header with help */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-800/30 shrink-0">
-        <span className="text-xs car:text-sm text-zinc-500">{messages.length} messages</span>
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-dashbot-border shrink-0">
+        <span className="text-xs car:text-sm text-dashbot-muted">{messages.length} messages</span>
         <div className="flex items-center gap-1.5">
           <button
             onClick={toggleCarMode}
-            className={`p-1 rounded transition-colors ${carMode ? 'text-blue-400 bg-blue-400/15' : 'text-zinc-500 hover:text-zinc-300'}`}
+            className={`p-1 rounded transition-colors ${carMode ? 'text-blue-400 bg-blue-400/15' : 'text-dashbot-muted hover:text-dashbot-text'}`}
             title={carMode ? 'Disable car mode' : 'Enable car mode'}
           >
             <Car className="size-3.5 car:size-5" />
@@ -191,7 +191,7 @@ export default function HomeIndex({ chat_session_id, messages: initialMessages }
         <ScrollArea className="h-full px-3">
         <div className="max-w-3xl mx-auto py-2 space-y-1.5 car:space-y-3">
           {messages.length === 0 && (
-            <div className="text-center text-zinc-500 py-8 text-sm car:text-lg">
+            <div className="text-center text-dashbot-muted py-8 text-sm car:text-lg">
               No messages yet. Say something!
             </div>
           )}
@@ -230,7 +230,7 @@ export default function HomeIndex({ chat_session_id, messages: initialMessages }
                           ? isHelpRequest
                             ? 'bg-cyan-500/15 text-cyan-100 border border-cyan-500/20 whitespace-pre-wrap text-xs car:text-sm'
                             : 'bg-dashbot-primary text-white shadow-[0_0_12px_rgba(62,106,225,0.25)] whitespace-pre-wrap'
-                          : 'bg-[rgba(255,255,255,0.07)] text-dashbot-text prose prose-invert prose-sm car:prose-lg max-w-none'
+                          : 'bg-dashbot-surface text-dashbot-text prose prose-invert prose-sm car:prose-lg max-w-none'
                       }`}
                     >
                       {msg.role === 'user' ? msg.content : (
@@ -254,7 +254,7 @@ export default function HomeIndex({ chat_session_id, messages: initialMessages }
       </div>
 
       {/* Input — bottom of content area */}
-      <div className="shrink-0 px-3 py-2 car:px-4 car:py-3 bg-zinc-950/80 backdrop-blur-md border-t border-zinc-800/50 mb-safe">
+      <div className="shrink-0 px-3 py-2 car:px-4 car:py-3 bg-dashbot-bg/80 backdrop-blur-md border-t border-dashbot-border mb-safe">
         <div className="max-w-3xl mx-auto flex gap-1.5 car:gap-2">
           <Input
             ref={inputRef}

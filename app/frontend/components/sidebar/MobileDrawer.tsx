@@ -54,7 +54,7 @@ export default function MobileDrawer({ open, onClose, data, connected, selection
 
       {/* Drawer */}
       <div
-        className={`md:hidden fixed inset-y-0 left-0 z-50 w-72 bg-zinc-950 border-r border-zinc-800/50 flex flex-col transition-transform duration-200 ease-out ${
+        className={`md:hidden fixed inset-y-0 left-0 z-50 w-72 bg-dashbot-bg border-r border-dashbot-border flex flex-col transition-transform duration-200 ease-out ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
         role="dialog"
@@ -62,9 +62,9 @@ export default function MobileDrawer({ open, onClose, data, connected, selection
         aria-label="Agent sidebar"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/50">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-dashbot-border">
           <div className="flex items-center gap-2.5">
-            <span className="text-sm font-light tracking-wider uppercase text-zinc-200">
+            <span className="text-sm font-light tracking-wider uppercase text-dashbot-text">
               DashBot
             </span>
             <span
@@ -77,7 +77,7 @@ export default function MobileDrawer({ open, onClose, data, connected, selection
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-colors"
+            className="p-1.5 rounded-lg text-dashbot-muted hover:text-dashbot-text hover:bg-dashbot-surface transition-colors"
             aria-label="Close sidebar"
           >
             <X className="size-5" />

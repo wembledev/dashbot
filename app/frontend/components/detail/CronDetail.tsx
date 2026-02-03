@@ -71,8 +71,8 @@ export default function CronDetail({ cron, onBack }: CronDetailProps) {
             <Clock className="size-5 text-indigo-400" />
           </div>
           <div>
-            <h2 className="text-lg font-medium text-zinc-100">{cron.name}</h2>
-            <p className="text-sm text-zinc-500 font-mono">{cron.schedule}</p>
+            <h2 className="text-lg font-medium text-dashbot-text">{cron.name}</h2>
+            <p className="text-sm text-dashbot-muted font-mono">{cron.schedule}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -103,23 +103,23 @@ export default function CronDetail({ cron, onBack }: CronDetailProps) {
       {/* Last run status */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-zinc-300">Run Status</h3>
+          <h3 className="text-sm font-medium text-dashbot-text">Run Status</h3>
           <HelpButton
             topic="Cron Job"
             context={`Cron job "${cron.name}" with schedule ${cron.schedule}. Last run: ${cron.lastRun || 'never'}. Status: ${cron.status}. Target: ${cron.target || 'default'}. Enabled: ${cron.enabled !== false ? 'yes' : 'no'}.`}
           />
         </div>
-        <div className="bg-zinc-900/50 rounded-xl border border-zinc-800/50 p-4">
+        <div className="bg-dashbot-surface rounded-xl border border-dashbot-border p-4">
           <div className="flex items-center gap-2">
             <StatusIcon className={`size-4 ${statusColor}`} />
-            <span className="text-sm text-zinc-200">
+            <span className="text-sm text-dashbot-text">
               {cron.status === 'ok' ? 'Last run completed successfully' :
                cron.status === 'failed' ? 'Last run failed' :
                'Status unknown'}
             </span>
           </div>
           {cron.lastRun && (
-            <p className="text-xs text-zinc-500 mt-2 ml-6">{cron.lastRun}</p>
+            <p className="text-xs text-dashbot-muted mt-2 ml-6">{cron.lastRun}</p>
           )}
         </div>
       </section>
@@ -127,10 +127,10 @@ export default function CronDetail({ cron, onBack }: CronDetailProps) {
       {/* Payload preview */}
       {cron.payloadText && (
         <section>
-          <h3 className="text-sm font-medium text-zinc-300 mb-3">Payload</h3>
-          <div className="bg-zinc-900/50 rounded-xl border border-zinc-800/50 p-4">
-            <p className="text-xs text-zinc-500 mb-1 font-mono">{cron.payloadKind || 'text'}</p>
-            <p className="text-sm text-zinc-300 whitespace-pre-wrap line-clamp-6">{cron.payloadText}</p>
+          <h3 className="text-sm font-medium text-dashbot-text mb-3">Payload</h3>
+          <div className="bg-dashbot-surface rounded-xl border border-dashbot-border p-4">
+            <p className="text-xs text-dashbot-muted mb-1 font-mono">{cron.payloadKind || 'text'}</p>
+            <p className="text-sm text-dashbot-text whitespace-pre-wrap line-clamp-6">{cron.payloadText}</p>
           </div>
         </section>
       )}
@@ -165,9 +165,9 @@ export default function CronDetail({ cron, onBack }: CronDetailProps) {
 
 function InfoCard({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="bg-zinc-900/50 rounded-xl border border-zinc-800/50 p-3">
-      <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">{label}</p>
-      <p className={`text-sm text-zinc-200 truncate ${mono ? 'font-mono' : ''}`}>{value}</p>
+    <div className="bg-dashbot-surface rounded-xl border border-dashbot-border p-3">
+      <p className="text-xs text-dashbot-muted uppercase tracking-wider mb-1">{label}</p>
+      <p className={`text-sm text-dashbot-text truncate ${mono ? 'font-mono' : ''}`}>{value}</p>
     </div>
   )
 }

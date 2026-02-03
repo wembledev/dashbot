@@ -52,8 +52,8 @@ export default function SessionDetail({ session, onBack }: SessionDetailProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <CheckCircle className="size-8 text-green-400 mb-3" />
-        <p className="text-sm text-zinc-300">Session closed successfully</p>
-        <p className="text-xs text-zinc-500 mt-1">Select another item from the sidebar</p>
+        <p className="text-sm text-dashbot-text">Session closed successfully</p>
+        <p className="text-xs text-dashbot-muted mt-1">Select another item from the sidebar</p>
       </div>
     )
   }
@@ -76,13 +76,13 @@ export default function SessionDetail({ session, onBack }: SessionDetailProps) {
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
             session.status === 'active' ? 'bg-green-500/10' :
             session.status === 'idle' ? 'bg-yellow-500/10' :
-            session.status === 'failed' ? 'bg-red-500/10' : 'bg-zinc-800/50'
+            session.status === 'failed' ? 'bg-red-500/10' : 'bg-dashbot-surface'
           }`}>
             <Globe className={`size-5 ${config.color}`} />
           </div>
           <div>
-            <h2 className="text-lg font-medium text-zinc-100">{session.label}</h2>
-            <p className="text-xs text-zinc-500 font-mono">{session.key}</p>
+            <h2 className="text-lg font-medium text-dashbot-text">{session.label}</h2>
+            <p className="text-xs text-dashbot-muted font-mono">{session.key}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -105,18 +105,18 @@ export default function SessionDetail({ session, onBack }: SessionDetailProps) {
       {/* Context usage bar */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-zinc-300">Context Window</h3>
+          <h3 className="text-sm font-medium text-dashbot-text">Context Window</h3>
           <HelpButton
             topic="Session Context"
             context={`Session "${session.label}" (${session.key}), type=${TYPE_LABELS[session.type] || session.type}, model=${session.model}, context window at ${session.contextPercent}%, tokens=${session.tokens || 'unknown'}, status=${config.label}.`}
           />
         </div>
-        <div className="bg-zinc-900/50 rounded-xl border border-zinc-800/50 p-4">
-          <div className="flex items-center justify-between text-xs text-zinc-500 mb-1.5">
+        <div className="bg-dashbot-surface rounded-xl border border-dashbot-border p-4">
+          <div className="flex items-center justify-between text-xs text-dashbot-muted mb-1.5">
             <span>Context Used</span>
             <span>{session.contextPercent}%</span>
           </div>
-          <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-dashbot-surface rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${
                 session.contextPercent > 80 ? 'bg-red-500' :
@@ -147,9 +147,9 @@ export default function SessionDetail({ session, onBack }: SessionDetailProps) {
 
 function InfoCard({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="bg-zinc-900/50 rounded-xl border border-zinc-800/50 p-3">
-      <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">{label}</p>
-      <p className={`text-sm text-zinc-200 truncate ${mono ? 'font-mono' : ''}`}>{value}</p>
+    <div className="bg-dashbot-surface rounded-xl border border-dashbot-border p-3">
+      <p className="text-xs text-dashbot-muted uppercase tracking-wider mb-1">{label}</p>
+      <p className={`text-sm text-dashbot-text truncate ${mono ? 'font-mono' : ''}`}>{value}</p>
     </div>
   )
 }

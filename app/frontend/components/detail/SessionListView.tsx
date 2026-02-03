@@ -16,7 +16,7 @@ const TYPE_BADGES: Record<string, { label: string; color: string }> = {
   subagent: { label: 'Sub-Agent', color: 'bg-violet-500/15 text-violet-400' },
   dashbot:  { label: 'DashBot',   color: 'bg-blue-500/15 text-blue-400' },
   channel:  { label: 'Channel',   color: 'bg-cyan-500/15 text-cyan-400' },
-  unknown:  { label: 'Unknown',   color: 'bg-zinc-500/15 text-zinc-400' },
+  unknown:  { label: 'Unknown',   color: 'bg-zinc-500/15 text-dashbot-muted' },
 }
 
 interface SessionListViewProps {
@@ -47,7 +47,7 @@ function SessionRow({ session, onSelect }: { session: SidebarSession; onSelect: 
   return (
     <div
       onClick={onSelect}
-      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50 hover:bg-zinc-800/50 transition-colors cursor-pointer"
+      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-dashbot-surface border border-dashbot-border hover:bg-dashbot-surface transition-colors cursor-pointer"
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onSelect()}
@@ -55,13 +55,13 @@ function SessionRow({ session, onSelect }: { session: SidebarSession; onSelect: 
       <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${config.dotColor}`} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-zinc-200 truncate">{session.label}</span>
+          <span className="text-sm font-medium text-dashbot-text truncate">{session.label}</span>
           <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${badge.color}`}>
             {badge.label}
           </span>
         </div>
         <div className="flex items-center gap-3 mt-0.5">
-          <span className="text-xs text-zinc-500 font-mono">{session.model}</span>
+          <span className="text-xs text-dashbot-muted font-mono">{session.model}</span>
           {session.age && <span className="text-xs text-zinc-600">{session.age}</span>}
           {session.tokens && <span className="text-xs text-zinc-600">{session.tokens}</span>}
         </div>
@@ -69,7 +69,7 @@ function SessionRow({ session, onSelect }: { session: SidebarSession; onSelect: 
       {/* Context bar */}
       <div className="w-16 shrink-0">
         <div className="flex items-center gap-1">
-          <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-dashbot-surface rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${
                 session.contextPercent > 80 ? 'bg-red-500' :
@@ -78,7 +78,7 @@ function SessionRow({ session, onSelect }: { session: SidebarSession; onSelect: 
               style={{ width: `${Math.min(session.contextPercent, 100)}%` }}
             />
           </div>
-          <span className="text-xs text-zinc-500 font-mono w-8 text-right">{session.contextPercent}%</span>
+          <span className="text-xs text-dashbot-muted font-mono w-8 text-right">{session.contextPercent}%</span>
         </div>
       </div>
       {/* Close button for non-main sessions */}
@@ -109,8 +109,8 @@ export default function SessionListView({ sessions, onSelectSession }: SessionLi
             <Layers className="size-5 text-cyan-400" />
           </div>
           <div>
-            <h2 className="text-lg font-medium text-zinc-100">Sessions</h2>
-            <p className="text-sm text-zinc-500">
+            <h2 className="text-lg font-medium text-dashbot-text">Sessions</h2>
+            <p className="text-sm text-dashbot-muted">
               {sessions.length} total · {activeCount} active
               {idleCount > 0 && ` · ${idleCount} idle`}
             </p>
@@ -125,7 +125,7 @@ export default function SessionListView({ sessions, onSelectSession }: SessionLi
       {/* Session list */}
       <div className="space-y-2">
         {sessions.length === 0 ? (
-          <div className="text-center py-12 text-zinc-500">
+          <div className="text-center py-12 text-dashbot-muted">
             <Layers className="size-8 mx-auto mb-3 opacity-30" />
             <p className="text-sm">No active sessions</p>
           </div>
