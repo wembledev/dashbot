@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { router } from '@inertiajs/react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Sun, Moon, Monitor, Trash2, MessageSquare, Brain, Bell, Cpu, LogOut } from 'lucide-react'
@@ -68,40 +68,41 @@ export default function SettingsIndex() {
     return 'system'
   })
 
-  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window !== 'undefined') return resolveTheme(themePref)
-    return 'dark'
-  })
-
   const { carMode, toggleCarMode } = useCarMode()
 
-  const updateResolved = useCallback((pref: ThemePreference) => {
-    const resolved = resolveTheme(pref)
-    setResolvedTheme(resolved)
-    applyTheme(resolved)
-  }, [])
+  // Compute resolved theme without setState in effect
+  const resolvedTheme = useMemo(() => {
+    if (typeof window === 'undefined') return 'dark'
+    return resolveTheme(themePref)
+  }, [themePref])
 
+  // Apply theme to DOM whenever resolved theme changes
+  useEffect(() => {
+    applyTheme(resolvedTheme)
+  }, [resolvedTheme])
+
+  // Save theme preference to localStorage
   useEffect(() => {
     localStorage.setItem('dashbot-theme', themePref)
-    updateResolved(themePref)
-  }, [themePref, updateResolved])
+  }, [themePref])
 
   // Watch system preference changes when "system" is selected
   useEffect(() => {
     if (themePref !== 'system') return
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = () => updateResolved('system')
+    const handler = () => {
+      // Trigger re-computation by forcing a state update
+      setThemePref('system')
+    }
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
-  }, [themePref, updateResolved])
+  }, [themePref])
 
   const clearChat = () => {
     if (confirm('Clear all messages? This cannot be undone.')) {
       router.delete('/dashboard/messages')
     }
   }
-
-  const themeIcon = resolvedTheme === 'dark' ? Moon : Sun
 
   return (
     <div className="h-full overflow-y-auto bg-dashbot-bg">
