@@ -129,31 +129,31 @@ function HelpDrawerInner({ ctx }: { ctx: ReturnType<typeof useHelpDrawer> & obje
 
   return (
     <div
-      className="w-full sm:w-[380px] bg-zinc-950 border-l border-zinc-800/50 flex flex-col shrink-0"
+      className="w-full sm:w-[380px] bg-dashbot-bg border-l border-dashbot-border flex flex-col shrink-0"
       role="complementary"
       aria-label="Help panel"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800/50 shrink-0">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-dashbot-border shrink-0">
         <div className="flex items-center gap-2">
           <Lightbulb className="size-4 text-cyan-400" />
           <span className="text-sm font-medium text-cyan-300">Help</span>
           {entries.length > 0 && (
-            <span className="text-xs text-zinc-500">({entries.length})</span>
+            <span className="text-xs text-dashbot-muted">({entries.length})</span>
           )}
         </div>
         <div className="flex items-center gap-1">
           {entries.length > 1 && (
             <button
               onClick={clearAll}
-              className="px-2 py-1 rounded text-[10px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-colors"
+              className="px-2 py-1 rounded text-[10px] text-dashbot-muted hover:text-dashbot-text hover:bg-dashbot-surface transition-colors"
             >
               Clear all
             </button>
           )}
           <button
             onClick={closeHelp}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-colors"
+            className="p-1.5 rounded-lg text-dashbot-muted hover:text-dashbot-text hover:bg-dashbot-surface transition-colors"
             aria-label="Close help panel"
           >
             <X className="size-4" />
@@ -175,16 +175,16 @@ function HelpDrawerInner({ ctx }: { ctx: ReturnType<typeof useHelpDrawer> & obje
               const assistantMsgs = entry.messages.filter(m => m.role === 'assistant')
 
               return (
-                <div key={entry.requestId} className="rounded-lg border border-zinc-800/50 overflow-hidden">
+                <div key={entry.requestId} className="rounded-lg border border-dashbot-border overflow-hidden">
                   {/* Entry header — clickable to collapse/expand */}
                   <button
                     onClick={() => toggleCollapse(entry.requestId)}
-                    className="w-full flex items-center gap-2 px-3 py-2 bg-zinc-900/50 hover:bg-zinc-800/30 transition-colors text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2 bg-dashbot-surface hover:bg-dashbot-surface transition-colors text-left"
                   >
                     {isCollapsed ? (
-                      <ChevronRight className="size-3 text-zinc-500 shrink-0" />
+                      <ChevronRight className="size-3 text-dashbot-muted shrink-0" />
                     ) : (
-                      <ChevronDown className="size-3 text-zinc-500 shrink-0" />
+                      <ChevronDown className="size-3 text-dashbot-muted shrink-0" />
                     )}
                     <span className="text-xs font-medium text-cyan-300 truncate flex-1">
                       {entry.topic}
@@ -198,7 +198,7 @@ function HelpDrawerInner({ ctx }: { ctx: ReturnType<typeof useHelpDrawer> & obje
                   {!isCollapsed && (
                     <div className="px-3 py-2">
                       {entry.loading && assistantMsgs.length === 0 && (
-                        <div className="flex items-center gap-2 text-zinc-500 text-xs">
+                        <div className="flex items-center gap-2 text-dashbot-muted text-xs">
                           <div className="size-1.5 bg-cyan-400 rounded-full animate-pulse" />
                           Thinking...
                         </div>

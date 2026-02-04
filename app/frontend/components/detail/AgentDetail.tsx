@@ -36,18 +36,18 @@ function SubAgentRow({ agent, onNavigate }: SubAgentRowProps) {
   return (
     <button
       onClick={() => onNavigate(agent.label)}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-800/50 transition-colors text-left group"
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-dashbot-surface transition-colors text-left group"
     >
       <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[agent.status]}`} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-zinc-200 font-medium truncate">{agent.label}</span>
+          <span className="text-sm text-dashbot-text font-medium truncate">{agent.label}</span>
           {agent.model && (
-            <span className="text-xs text-zinc-500 font-mono shrink-0">{agent.model}</span>
+            <span className="text-xs text-dashbot-muted font-mono shrink-0">{agent.model}</span>
           )}
         </div>
         {agent.task && (
-          <p className="text-xs text-zinc-500 truncate mt-0.5">{agent.task}</p>
+          <p className="text-xs text-dashbot-muted truncate mt-0.5">{agent.task}</p>
         )}
       </div>
       <span className={`text-xs shrink-0 ${statusConfig.color}`}>
@@ -77,8 +77,8 @@ export function MainAgentDetail({ data, onNavigateToAgent }: MainAgentDetailProp
             <Bot className="size-5 text-green-400" />
           </div>
           <div>
-            <h2 className="text-lg font-medium text-zinc-100">Main Agent</h2>
-            <p className="text-xs text-zinc-500 font-mono">{mainAgent.model}</p>
+            <h2 className="text-lg font-medium text-dashbot-text">Main Agent</h2>
+            <p className="text-xs text-dashbot-muted font-mono">{mainAgent.model}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -103,24 +103,24 @@ export function MainAgentDetail({ data, onNavigateToAgent }: MainAgentDetailProp
       {mainAgent.inputTokens && (
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-zinc-300">Token Usage</h3>
+            <h3 className="text-sm font-medium text-dashbot-text">Token Usage</h3>
             <HelpButton
               topic="Token Usage"
               context={`Main Agent token usage: model=${mainAgent.model}, tokens=${mainAgent.inputTokens}, context window at ${mainAgent.contextPercent}%. What do these numbers mean? When should I be concerned?`}
             />
           </div>
-          <div className="bg-zinc-900/50 rounded-xl border border-zinc-800/50 p-4">
+          <div className="bg-dashbot-surface rounded-xl border border-dashbot-border p-4">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-400">Total Tokens</span>
-              <span className="text-zinc-200 font-mono">{mainAgent.inputTokens}</span>
+              <span className="text-dashbot-muted">Total Tokens</span>
+              <span className="text-dashbot-text font-mono">{mainAgent.inputTokens}</span>
             </div>
             {mainAgent.contextPercent !== undefined && (
               <div className="mt-3">
-                <div className="flex items-center justify-between text-xs text-zinc-500 mb-1.5">
+                <div className="flex items-center justify-between text-xs text-dashbot-muted mb-1.5">
                   <span>Context Window</span>
                   <span>{mainAgent.contextPercent}%</span>
                 </div>
-                <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-dashbot-surface rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${
                       mainAgent.contextPercent > 80 ? 'bg-red-500' :
@@ -138,10 +138,10 @@ export function MainAgentDetail({ data, onNavigateToAgent }: MainAgentDetailProp
       {/* Sub-Agents */}
       {(runningAgents.length > 0 || recentAgents.length > 0) && (
         <section>
-          <h3 className="text-sm font-medium text-zinc-300 mb-3">
+          <h3 className="text-sm font-medium text-dashbot-text mb-3">
             Sub-Agents ({subAgents.length})
           </h3>
-          <div className="bg-zinc-900/50 rounded-xl border border-zinc-800/50 divide-y divide-zinc-800/50">
+          <div className="bg-dashbot-surface rounded-xl border border-dashbot-border divide-y divide-dashbot-border">
             {runningAgents.map(agent => (
               <SubAgentRow
                 key={agent.label + agent.startedAt}
@@ -179,14 +179,14 @@ export function SubAgentDetail({ agent, onNavigateToMain }: SubAgentDetailProps)
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
             agent.status === 'running' ? 'bg-green-500/10' :
             agent.status === 'completed' ? 'bg-blue-500/10' :
-            agent.status === 'failed' ? 'bg-red-500/10' : 'bg-zinc-800/50'
+            agent.status === 'failed' ? 'bg-red-500/10' : 'bg-dashbot-surface'
           }`}>
             <Zap className={`size-5 ${statusConfig.color}`} />
           </div>
           <div>
-            <h2 className="text-lg font-medium text-zinc-100">{agent.label}</h2>
+            <h2 className="text-lg font-medium text-dashbot-text">{agent.label}</h2>
             {agent.model && (
-              <p className="text-xs text-zinc-500 font-mono">{agent.model}</p>
+              <p className="text-xs text-dashbot-muted font-mono">{agent.model}</p>
             )}
           </div>
         </div>
@@ -210,9 +210,9 @@ export function SubAgentDetail({ agent, onNavigateToMain }: SubAgentDetailProps)
       {/* Task */}
       {agent.task && (
         <section>
-          <h3 className="text-sm font-medium text-zinc-300 mb-3">Current Task</h3>
-          <div className="bg-zinc-900/50 rounded-xl border border-zinc-800/50 p-4">
-            <p className="text-sm text-zinc-300">{agent.task}</p>
+          <h3 className="text-sm font-medium text-dashbot-text mb-3">Current Task</h3>
+          <div className="bg-dashbot-surface rounded-xl border border-dashbot-border p-4">
+            <p className="text-sm text-dashbot-text">{agent.task}</p>
           </div>
         </section>
       )}
@@ -232,9 +232,9 @@ export function SubAgentDetail({ agent, onNavigateToMain }: SubAgentDetailProps)
 
 function InfoCard({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="bg-zinc-900/50 rounded-xl border border-zinc-800/50 p-3">
-      <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">{label}</p>
-      <p className={`text-sm text-zinc-200 truncate ${mono ? 'font-mono' : ''}`}>{value}</p>
+    <div className="bg-dashbot-surface rounded-xl border border-dashbot-border p-3">
+      <p className="text-xs text-dashbot-muted uppercase tracking-wider mb-1">{label}</p>
+      <p className={`text-sm text-dashbot-text truncate ${mono ? 'font-mono' : ''}`}>{value}</p>
     </div>
   )
 }

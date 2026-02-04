@@ -1,9 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { router } from '@inertiajs/react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Sun, Moon, Trash2, MessageSquare, Brain, Bell, Cpu, LogOut } from 'lucide-react'
+import { Sun, Moon, Monitor, Trash2, MessageSquare, Brain, Bell, Cpu, LogOut } from 'lucide-react'
 import HelpButton from '@/components/status/help-button'
 import { useCarMode } from '@/contexts/car-mode-context'
+
+type ThemePreference = 'system' | 'dark' | 'light'
+
+function resolveTheme(pref: ThemePreference): 'dark' | 'light' {
+  if (pref === 'system') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+  return pref
+}
+
+function applyTheme(resolved: 'dark' | 'light') {
+  document.documentElement.setAttribute('data-theme', resolved)
+}
 
 function ToggleRow({ label, description, enabled, onToggle }: {
   label: string
@@ -14,13 +27,13 @@ function ToggleRow({ label, description, enabled, onToggle }: {
   return (
     <div className="flex items-center justify-between py-2">
       <div>
-        <p className="text-zinc-200 text-sm font-medium">{label}</p>
-        <p className="text-zinc-500 text-xs mt-0.5">{description}</p>
+        <p className="text-dashbot-text text-sm font-medium">{label}</p>
+        <p className="text-dashbot-muted text-xs mt-0.5">{description}</p>
       </div>
       <button
         onClick={onToggle}
         className={`relative w-9 h-5 rounded-full transition-colors ${
-          enabled ? 'bg-blue-600' : 'bg-zinc-700'
+          enabled ? 'bg-blue-600' : 'bg-dashbot-surface'
         }`}
       >
         <span
@@ -33,6 +46,12 @@ function ToggleRow({ label, description, enabled, onToggle }: {
   )
 }
 
+const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
+  { value: 'system', label: 'System', icon: Monitor },
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon },
+]
+
 function SoonBadge() {
   return (
     <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">
@@ -42,19 +61,42 @@ function SoonBadge() {
 }
 
 export default function SettingsIndex() {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+  const [themePref, setThemePref] = useState<ThemePreference>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('dashbot-theme') as 'dark' | 'light') || 'dark'
+      return (localStorage.getItem('dashbot-theme') as ThemePreference) || 'system'
     }
-    return 'dark'
+    return 'system'
   })
 
   const { carMode, toggleCarMode } = useCarMode()
 
+  // Compute resolved theme without setState in effect
+  const resolvedTheme = useMemo(() => {
+    if (typeof window === 'undefined') return 'dark'
+    return resolveTheme(themePref)
+  }, [themePref])
+
+  // Apply theme to DOM whenever resolved theme changes
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('dashbot-theme', theme)
-  }, [theme])
+    applyTheme(resolvedTheme)
+  }, [resolvedTheme])
+
+  // Save theme preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('dashbot-theme', themePref)
+  }, [themePref])
+
+  // Watch system preference changes when "system" is selected
+  useEffect(() => {
+    if (themePref !== 'system') return
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = () => {
+      // Trigger re-computation by forcing a state update
+      setThemePref('system')
+    }
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [themePref])
 
   const clearChat = () => {
     if (confirm('Clear all messages? This cannot be undone.')) {
@@ -63,14 +105,14 @@ export default function SettingsIndex() {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-zinc-950">
+    <div className="h-full overflow-y-auto bg-dashbot-bg">
       <div className="px-2 sm:px-3 pb-3">
         <div>
           <div className="mb-2 mt-2 flex items-center justify-between">
-            <h1 className="text-sm sm:text-base font-medium text-zinc-100">Settings</h1>
+            <h1 className="text-sm sm:text-base font-medium text-dashbot-text">Settings</h1>
             <HelpButton
               topic="Settings"
-              context="DashBot Settings page. Configure appearance (dark/light mode, car mode for Tesla browser), chat settings (clear history), and manage your session. Models, Memory, and Notifications sections are coming soon. What settings are available? How does car mode work?"
+              context="DashBot Settings page. Configure appearance (system/dark/light theme, car mode for Tesla browser), chat settings (clear history), and manage your session. Models, Memory, and Notifications sections are coming soon. What settings are available? How does car mode work?"
             />
           </div>
 
@@ -78,20 +120,38 @@ export default function SettingsIndex() {
             {/* Appearance */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-1.5 text-zinc-200">
-                  {theme === 'dark' ? <Moon className="size-3.5 text-indigo-400" /> : <Sun className="size-3.5 text-amber-400" />}
+                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
+                  {resolvedTheme === 'dark' ? <Moon className="size-3.5 text-indigo-400" /> : <Sun className="size-3.5 text-amber-400" />}
                   Appearance
                 </CardTitle>
                 <CardDescription>Theme and display preferences</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-0 divide-y divide-zinc-800">
-                  <ToggleRow
-                    label="Light Mode"
-                    description="Switch to a light color scheme"
-                    enabled={theme === 'light'}
-                    onToggle={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
-                  />
+                <div className="space-y-3 divide-y divide-dashbot-border">
+                  {/* Theme selector */}
+                  <div className="py-2">
+                    <p className="text-dashbot-text text-sm font-medium mb-2">Theme</p>
+                    <div className="flex rounded-lg border border-dashbot-border overflow-hidden">
+                      {themeOptions.map(({ value, label, icon: Icon }) => (
+                        <button
+                          key={value}
+                          onClick={() => setThemePref(value)}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                            themePref === value
+                              ? 'bg-dashbot-primary text-white'
+                              : 'bg-dashbot-surface text-dashbot-muted hover:text-dashbot-text'
+                          }`}
+                        >
+                          <Icon className="size-3" />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-dashbot-muted text-xs mt-1.5">
+                      {themePref === 'system' ? 'Follows your operating system preference' :
+                       themePref === 'light' ? 'Always use light colors' : 'Always use dark colors'}
+                    </p>
+                  </div>
                   <ToggleRow
                     label="Car Mode"
                     description="Larger text and buttons for driving (Tesla browser)"
@@ -105,7 +165,7 @@ export default function SettingsIndex() {
             {/* Chat */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-1.5 text-zinc-200">
+                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
                   <MessageSquare className="size-3.5 text-blue-400" />
                   Chat
                 </CardTitle>
@@ -114,8 +174,8 @@ export default function SettingsIndex() {
               <CardContent>
                 <div className="flex items-center justify-between py-2">
                   <div>
-                    <p className="text-zinc-200 text-sm font-medium">Clear Chat History</p>
-                    <p className="text-zinc-500 text-xs mt-0.5">Delete all messages in the current session</p>
+                    <p className="text-dashbot-text text-sm font-medium">Clear Chat History</p>
+                    <p className="text-dashbot-muted text-xs mt-0.5">Delete all messages in the current session</p>
                   </div>
                   <button
                     onClick={clearChat}
@@ -131,7 +191,7 @@ export default function SettingsIndex() {
             {/* Models (coming soon) */}
             <Card className="opacity-60">
               <CardHeader>
-                <CardTitle className="flex items-center gap-1.5 text-zinc-200">
+                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
                   <Cpu className="size-3.5 text-violet-400" />
                   Models
                   <SoonBadge />
@@ -139,14 +199,14 @@ export default function SettingsIndex() {
                 <CardDescription>AI model assignments and fallback hierarchy</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-zinc-500 text-xs">Choose default model, set fallback hierarchy, and configure per-session overrides.</p>
+                <p className="text-dashbot-muted text-xs">Choose default model, set fallback hierarchy, and configure per-session overrides.</p>
               </CardContent>
             </Card>
 
             {/* Memory (coming soon) */}
             <Card className="opacity-60">
               <CardHeader>
-                <CardTitle className="flex items-center gap-1.5 text-zinc-200">
+                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
                   <Brain className="size-3.5 text-cyan-400" />
                   Memory
                   <SoonBadge />
@@ -154,14 +214,14 @@ export default function SettingsIndex() {
                 <CardDescription>Vector search index and memory management</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-zinc-500 text-xs">Save notes, browse memory files, re-index vectors, and manage the knowledge base.</p>
+                <p className="text-dashbot-muted text-xs">Save notes, browse memory files, re-index vectors, and manage the knowledge base.</p>
               </CardContent>
             </Card>
 
             {/* Notifications (coming soon) */}
             <Card className="opacity-60">
               <CardHeader>
-                <CardTitle className="flex items-center gap-1.5 text-zinc-200">
+                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
                   <Bell className="size-3.5 text-yellow-400" />
                   Notifications
                   <SoonBadge />
@@ -169,14 +229,14 @@ export default function SettingsIndex() {
                 <CardDescription>Telegram pings, card alerts, digest frequency</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-zinc-500 text-xs">Control when and how the agent notifies you about new items.</p>
+                <p className="text-dashbot-muted text-xs">Control when and how the agent notifies you about new items.</p>
               </CardContent>
             </Card>
 
             {/* Logout */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-1.5 text-zinc-200">
+                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
                   <LogOut className="size-3.5 text-red-400" />
                   Account
                 </CardTitle>
@@ -185,8 +245,8 @@ export default function SettingsIndex() {
               <CardContent>
                 <div className="flex items-center justify-between py-2">
                   <div>
-                    <p className="text-zinc-200 text-sm font-medium">Logout</p>
-                    <p className="text-zinc-500 text-xs mt-0.5">Sign out and return to the login page</p>
+                    <p className="text-dashbot-text text-sm font-medium">Logout</p>
+                    <p className="text-dashbot-muted text-xs mt-0.5">Sign out and return to the login page</p>
                   </div>
                   <button
                     onClick={() => {

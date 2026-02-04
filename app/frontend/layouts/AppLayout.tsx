@@ -51,7 +51,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const hideSidebar = isChat || isSettings
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-950 overflow-hidden">
+    <div className="flex flex-col h-screen bg-dashbot-bg overflow-hidden">
       {/* Top bar with nav — ALWAYS on top */}
       <TopBar
         data={data}

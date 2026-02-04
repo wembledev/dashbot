@@ -18,7 +18,7 @@ export default function MobileNav() {
   }
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/50 safe-area-bottom" role="navigation" aria-label="Mobile navigation">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-dashbot-bg/95 backdrop-blur-md border-t border-dashbot-border safe-area-bottom" role="navigation" aria-label="Mobile navigation">
       <div className="flex items-center justify-around px-2 py-1.5">
         {tabs.map(({ label, href, icon: Icon }) => (
           <Link
@@ -27,7 +27,7 @@ export default function MobileNav() {
             className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] transition-colors ${
               isActive(href)
                 ? 'text-blue-400'
-                : 'text-zinc-500 active:text-zinc-300'
+                : 'text-dashbot-muted active:text-dashbot-text'
             }`}
             aria-current={isActive(href) ? 'page' : undefined}
           >

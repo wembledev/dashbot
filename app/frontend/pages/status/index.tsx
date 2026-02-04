@@ -27,7 +27,7 @@ function CarModeToggle() {
       className={`p-1.5 sm:p-2 car:p-3 rounded-full transition-colors ${
         carMode
           ? 'bg-blue-600 text-white'
-          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+          : 'text-dashbot-muted hover:text-dashbot-text hover:bg-dashbot-surface'
       }`}
       aria-label={carMode ? 'Disable car mode' : 'Enable car mode'}
       title={carMode ? 'Car mode ON' : 'Car mode OFF'}
@@ -163,13 +163,13 @@ function StatusContent({ status_data: initialData, initial_events: initialEvents
   }, [lastRefresh])
 
   return (
-    <div className="h-full overflow-y-auto bg-zinc-950">
+    <div className="h-full overflow-y-auto bg-dashbot-bg">
       <div className="px-2 sm:px-3 pb-3">
         <div>
           {/* Page header */}
           <div className="flex items-center justify-between mb-2 mt-2">
             <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-base car:text-3xl font-medium text-zinc-100">
+              <h1 className="text-sm sm:text-base car:text-3xl font-medium text-dashbot-text">
                 Status
               </h1>
               {!carMode && (
@@ -183,7 +183,7 @@ function StatusContent({ status_data: initialData, initial_events: initialEvents
               <button
                 onClick={refreshData}
                 disabled={refreshing}
-                className="p-1 car:p-3 rounded hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-200 disabled:opacity-50"
+                className="p-1 car:p-3 rounded hover:bg-dashbot-surface transition-colors text-dashbot-muted hover:text-dashbot-text disabled:opacity-50"
                 aria-label="Refresh status"
               >
                 <RefreshCw className={`size-3.5 car:size-5 ${refreshing ? 'animate-spin' : ''}`} />

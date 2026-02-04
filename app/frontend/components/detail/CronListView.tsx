@@ -53,10 +53,10 @@ function CronRow({ cron, onSelect }: { cron: SidebarCron; onSelect: () => void }
       onClick={onSelect}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors cursor-pointer ${
         isDisabled
-          ? 'bg-zinc-900/30 border-zinc-800/30 opacity-60'
+          ? 'bg-dashbot-surface border-dashbot-border opacity-60'
           : cron.status === 'failed'
             ? 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10'
-            : 'bg-zinc-900/50 border-zinc-800/50 hover:bg-zinc-800/50'
+            : 'bg-dashbot-surface border-dashbot-border hover:bg-dashbot-surface'
       }`}
       role="button"
       tabIndex={0}
@@ -65,14 +65,14 @@ function CronRow({ cron, onSelect }: { cron: SidebarCron; onSelect: () => void }
       <StatusIcon className={`size-4 shrink-0 ${statusColor}`} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium truncate ${isDisabled ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
+          <span className={`text-sm font-medium truncate ${isDisabled ? 'text-dashbot-muted line-through' : 'text-dashbot-text'}`}>
             {cron.name}
           </span>
           <span className="text-xs text-zinc-600 font-mono shrink-0">{cron.schedule}</span>
         </div>
         <div className="flex items-center gap-3 mt-0.5">
           {cron.nextRun && !isDisabled && (
-            <span className="text-xs text-zinc-500">Next: {cron.nextRun}</span>
+            <span className="text-xs text-dashbot-muted">Next: {cron.nextRun}</span>
           )}
           {cron.lastRun && (
             <span className="text-xs text-zinc-600">Last: {cron.lastRun}</span>
@@ -92,7 +92,7 @@ function CronRow({ cron, onSelect }: { cron: SidebarCron; onSelect: () => void }
             onClick={handleRun}
             disabled={running}
             className={`p-1.5 rounded-lg transition-colors ${
-              running ? 'text-green-400 bg-green-500/20' : 'text-zinc-500 hover:text-green-400 hover:bg-green-500/10'
+              running ? 'text-green-400 bg-green-500/20' : 'text-dashbot-muted hover:text-green-400 hover:bg-green-500/10'
             }`}
             title="Run now"
             aria-label={`Run ${cron.name}`}
@@ -105,8 +105,8 @@ function CronRow({ cron, onSelect }: { cron: SidebarCron; onSelect: () => void }
           disabled={toggling}
           className={`p-1.5 rounded-lg transition-colors ${
             isDisabled
-              ? 'text-zinc-500 hover:text-green-400 hover:bg-green-500/10'
-              : 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10'
+              ? 'text-dashbot-muted hover:text-green-400 hover:bg-green-500/10'
+              : 'text-dashbot-muted hover:text-red-400 hover:bg-red-500/10'
           }`}
           title={isDisabled ? 'Enable' : 'Disable'}
           aria-label={`${isDisabled ? 'Enable' : 'Disable'} ${cron.name}`}
@@ -131,8 +131,8 @@ export default function CronListView({ crons, onSelectCron }: CronListViewProps)
             <Clock className="size-5 text-indigo-400" />
           </div>
           <div>
-            <h2 className="text-lg font-medium text-zinc-100">Cron Jobs</h2>
-            <p className="text-sm text-zinc-500">
+            <h2 className="text-lg font-medium text-dashbot-text">Cron Jobs</h2>
+            <p className="text-sm text-dashbot-muted">
               {crons.length} total · {enabledCount} enabled
               {errorCount > 0 && <span className="text-red-400"> · {errorCount} error{errorCount !== 1 ? 's' : ''}</span>}
             </p>
@@ -147,7 +147,7 @@ export default function CronListView({ crons, onSelectCron }: CronListViewProps)
       {/* Cron list */}
       <div className="space-y-2">
         {crons.length === 0 ? (
-          <div className="text-center py-12 text-zinc-500">
+          <div className="text-center py-12 text-dashbot-muted">
             <Clock className="size-8 mx-auto mb-3 opacity-30" />
             <p className="text-sm">No cron jobs configured</p>
           </div>

@@ -32,12 +32,24 @@
 
 /* Light theme */
 [data-theme="light"] {
-  --dashbot-bg: #f5f5f7;
-  --dashbot-surface: rgba(0,0,0,0.03);
+  --dashbot-bg: #f8f8fa;
+  --dashbot-surface: rgba(0,0,0,0.04);
   --dashbot-surface-solid: #ffffff;
-  --dashbot-border: rgba(0,0,0,0.08);
-  --dashbot-text: #1d1d1f;
-  --dashbot-muted: rgba(0,0,0,0.45);
+  --dashbot-border: rgba(0,0,0,0.10);
+  --dashbot-text: #1a1a1f;
+  --dashbot-muted: rgba(0,0,0,0.50);
+}
+
+/* Auto-detect system preference when no data-theme is set */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --dashbot-bg: #f8f8fa;
+    --dashbot-surface: rgba(0,0,0,0.04);
+    --dashbot-surface-solid: #ffffff;
+    --dashbot-border: rgba(0,0,0,0.10);
+    --dashbot-text: #1a1a1f;
+    --dashbot-muted: rgba(0,0,0,0.50);
+  }
 }
 
 @layer base {
@@ -59,7 +71,7 @@
     @apply bg-dashbot-bg text-dashbot-text antialiased;
     font-weight: 300;
     line-height: 1.4;
-    scrollbar-color: var(--color-dashbot-surface-solid) #000000;
+    scrollbar-color: var(--color-dashbot-surface-solid) var(--dashbot-bg);
     scrollbar-width: thin;
   }
 }
@@ -115,6 +127,36 @@
 
 [data-theme="light"].car-mode {
   --dashbot-muted: rgba(0,0,0,0.6);
+}
+
+/* Override prose-invert in light mode so markdown text is dark */
+[data-theme="light"] .prose-invert,
+:root:not([data-theme]) .prose-invert {
+  --tw-prose-body: var(--dashbot-text);
+  --tw-prose-headings: var(--dashbot-text);
+  --tw-prose-lead: var(--dashbot-muted);
+  --tw-prose-links: #3E6AE1;
+  --tw-prose-bold: var(--dashbot-text);
+  --tw-prose-counters: var(--dashbot-muted);
+  --tw-prose-bullets: var(--dashbot-muted);
+  --tw-prose-hr: var(--dashbot-border);
+  --tw-prose-quotes: var(--dashbot-text);
+  --tw-prose-quote-borders: var(--dashbot-border);
+  --tw-prose-captions: var(--dashbot-muted);
+  --tw-prose-code: var(--dashbot-text);
+  --tw-prose-pre-code: #e8e8ed;
+  --tw-prose-pre-bg: #1a1a1f;
+  --tw-prose-th-borders: var(--dashbot-border);
+  --tw-prose-td-borders: var(--dashbot-border);
+}
+
+/* Only apply light prose overrides when system prefers light AND no data-theme is set */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .prose-invert {
+    /* Reset — keep dark prose defaults */
+    --tw-prose-body: initial;
+    --tw-prose-headings: initial;
+  }
 }
 
 .hide-scrollbar {

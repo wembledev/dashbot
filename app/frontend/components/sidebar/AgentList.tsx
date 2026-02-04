@@ -33,14 +33,14 @@ function SubAgentCard({ agent, session, selected, onSelect }: SubAgentCardProps)
       className={`w-full text-left group pl-4 pr-3 py-2 rounded-lg cursor-pointer transition-colors border-l-2 border-l-violet-500/40 ml-3 ${
         selected
           ? 'bg-blue-500/10 border border-blue-500/20 !border-l-2 !border-l-violet-500'
-          : 'hover:bg-zinc-800/50 border border-transparent'
+          : 'hover:bg-dashbot-surface border border-transparent'
       }`}
     >
       <div className="flex items-center gap-2">
         {/* Status dot */}
         <span className={`w-2 h-2 rounded-full shrink-0 ${config.dotColor}`} />
         {/* Label */}
-        <span className="text-sm font-medium text-zinc-200 truncate flex-1">
+        <span className="text-sm font-medium text-dashbot-text truncate flex-1">
           {agent.label}
         </span>
         {/* Status icon */}
@@ -48,26 +48,26 @@ function SubAgentCard({ agent, session, selected, onSelect }: SubAgentCardProps)
       </div>
       <div className="flex items-center gap-2 ml-4 mt-0.5">
         {agent.model && (
-          <span className="text-xs text-zinc-500 font-mono">{agent.model}</span>
+          <span className="text-xs text-dashbot-muted font-mono">{agent.model}</span>
         )}
         {agent.model && agent.task && (
           <span className="text-xs text-zinc-700">·</span>
         )}
         {agent.task && (
-          <span className="text-xs text-zinc-500 truncate">{agent.task}</span>
+          <span className="text-xs text-dashbot-muted truncate">{agent.task}</span>
         )}
         {!agent.task && agent.status === 'running' && (
-          <span className="text-xs text-zinc-500">{formatRunningDuration(agent.startedAt)}</span>
+          <span className="text-xs text-dashbot-muted">{formatRunningDuration(agent.startedAt)}</span>
         )}
         {agent.duration && agent.status !== 'running' && (
-          <span className="text-xs text-zinc-500">{agent.duration}</span>
+          <span className="text-xs text-dashbot-muted">{agent.duration}</span>
         )}
       </div>
       {/* Token usage bar */}
       {session && session.contextPercent > 0 && (
         <div className="ml-4 mt-1.5">
           <div className="flex items-center gap-1.5">
-            <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="flex-1 h-1 bg-dashbot-surface rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
                   session.contextPercent > 80 ? 'bg-red-500' :
@@ -103,18 +103,18 @@ function MainAgentCard({ model, status, sessionAge, running, contextPercent, sel
       className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${
         selected
           ? 'bg-blue-500/10 border border-blue-500/20'
-          : 'bg-zinc-800/30 border border-zinc-800/50 hover:bg-zinc-800/50'
+          : 'bg-dashbot-surface border border-dashbot-border hover:bg-dashbot-surface'
       }`}
     >
       <div className="flex items-center gap-2">
         <Bot className="size-4 text-green-400 shrink-0" />
-        <span className="text-sm font-semibold text-zinc-200 flex-1">Main Agent</span>
+        <span className="text-sm font-semibold text-dashbot-text flex-1">Main Agent</span>
         <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${config.dotColor}`} />
       </div>
       <div className="flex items-center gap-2 ml-6 mt-0.5">
         <span className="text-xs text-blue-400 font-mono">{model}</span>
         <span className="text-xs text-zinc-700">·</span>
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-dashbot-muted">
           {running ? `up ${sessionAge}` : 'stopped'}
         </span>
       </div>
@@ -122,7 +122,7 @@ function MainAgentCard({ model, status, sessionAge, running, contextPercent, sel
       {contextPercent !== undefined && contextPercent > 0 && (
         <div className="ml-6 mt-1.5">
           <div className="flex items-center gap-1.5">
-            <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="flex-1 h-1 bg-dashbot-surface rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
                   contextPercent > 80 ? 'bg-red-500' :
@@ -164,7 +164,7 @@ export default function AgentList({ mainAgent, subAgents, sessions, selection, o
     <div className="px-2 py-2 space-y-1">
       {/* Section label */}
       <div className="px-2 py-1">
-        <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+        <span className="text-xs font-medium text-dashbot-muted uppercase tracking-wider">
           Agents
         </span>
       </div>

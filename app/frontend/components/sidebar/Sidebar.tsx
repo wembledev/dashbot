@@ -12,7 +12,7 @@ interface SidebarProps {
 
 export default function Sidebar({ data, selection, onSelect }: SidebarProps) {
   return (
-    <aside className="hidden md:flex w-64 flex-col bg-zinc-950 border-r border-zinc-800/50 shrink-0">
+    <aside className="hidden md:flex w-64 flex-col bg-dashbot-bg border-r border-dashbot-border shrink-0">
       {/* Everything scrolls together — Agents, Crons, Sessions */}
       <div className="flex-1 overflow-y-auto">
         <AgentList
