@@ -54,6 +54,6 @@ end
 
 gem "vite_rails", "~> 3.0"
 
-gem "inertia_rails", "~> 3.16"
+gem "inertia_rails", "~> 3.17"
 
 gem "rqrcode", "~> 3.2"
