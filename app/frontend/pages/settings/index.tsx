@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { router } from '@inertiajs/react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Sun, Moon, Monitor, Trash2, MessageSquare, Brain, Bell, BellRing, Cpu, LogOut, RefreshCw, Save } from 'lucide-react'
+import { Sun, Moon, Monitor, Trash2, MessageSquare, Brain, Bell, BellRing, Cpu, LogOut, RefreshCw, Save, Plus } from 'lucide-react'
 import HelpButton from '@/components/status/help-button'
 import { useCarMode } from '@/contexts/car-mode-context'
 
@@ -12,12 +12,35 @@ type SaveState = {
   message: string
 }
 
-const MODEL_OPTIONS = [
+type AgentModelRow = {
+  id: string
+  model: string
+}
+
+type CronModelRow = {
+  id: string
+  name: string
+  enabled: boolean
+  model: string
+}
+
+type ModelConfigPayload = {
+  primary: string
+  fallbacks: string[]
+  subagentModel: string
+  embeddingModel: string
+  memoryFallback: string
+  agents: AgentModelRow[]
+  cronModels: CronModelRow[]
+  availableModels: string[]
+  enabledModels?: string[]
+}
+
+const FALLBACK_MODEL_OPTIONS = [
   'openai-codex/gpt-5.3-codex',
   'anthropic/claude-opus-4-6',
   'anthropic/claude-sonnet-4-5',
-  'openrouter/minimax/minimax-m2.5',
-  'openrouter/x-ai/grok-4.1-fast',
+  'anthropic/claude-haiku-4-5',
 ]
 
 function resolveTheme(pref: ThemePreference): 'dark' | 'light' {
@@ -92,6 +115,24 @@ async function postJson(url: string, body: Record<string, unknown>) {
   return data
 }
 
+async function getJson(url: string) {
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    credentials: 'same-origin',
+  })
+
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error((data.error as string) || 'Request failed')
+  }
+  return data as Record<string, unknown>
+}
+
+function uniqueNonEmpty(values: string[]): string[] {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)))
+}
+
 export default function SettingsIndex() {
   const [themePref, setThemePref] = useState<ThemePreference>(() => {
     if (typeof window !== 'undefined') {
@@ -100,18 +141,29 @@ export default function SettingsIndex() {
     return 'system'
   })
 
-  const [selectedModel, setSelectedModel] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('dashbot-model-primary') || MODEL_OPTIONS[0]
-    }
-    return MODEL_OPTIONS[0]
-  })
+  const [modelPrimary, setModelPrimary] = useState<string>('')
+  const [modelFallbacks, setModelFallbacks] = useState<string[]>([])
+  const [subagentModel, setSubagentModel] = useState<string>('')
+  const [embeddingModel, setEmbeddingModel] = useState<string>('')
+  const [memoryFallback, setMemoryFallback] = useState<string>('')
+  const [agentModels, setAgentModels] = useState<AgentModelRow[]>([])
+  const [cronModels, setCronModels] = useState<CronModelRow[]>([])
+  const [availableModels, setAvailableModels] = useState<string[]>(FALLBACK_MODEL_OPTIONS)
+  const [enabledModels, setEnabledModels] = useState<string[]>([])
+
   const [restartGatewayOnModelChange, setRestartGatewayOnModelChange] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('dashbot-model-restart') !== 'false'
     }
     return true
   })
+  const [ensurePhoneAccessAfterRestart, setEnsurePhoneAccessAfterRestart] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dashbot-model-ensure-phone') !== 'false'
+    }
+    return true
+  })
+  const [modelLoading, setModelLoading] = useState(true)
   const [modelSaving, setModelSaving] = useState(false)
 
   const [memoryNote, setMemoryNote] = useState('')
@@ -149,12 +201,12 @@ export default function SettingsIndex() {
   }, [themePref])
 
   useEffect(() => {
-    localStorage.setItem('dashbot-model-primary', selectedModel)
-  }, [selectedModel])
-
-  useEffect(() => {
     localStorage.setItem('dashbot-model-restart', restartGatewayOnModelChange ? 'true' : 'false')
   }, [restartGatewayOnModelChange])
+
+  useEffect(() => {
+    localStorage.setItem('dashbot-model-ensure-phone', ensurePhoneAccessAfterRestart ? 'true' : 'false')
+  }, [ensurePhoneAccessAfterRestart])
 
   useEffect(() => {
     localStorage.setItem('dashbot-notify-enabled', notificationsEnabled ? 'true' : 'false')
@@ -187,19 +239,133 @@ export default function SettingsIndex() {
   const setOk = (message: string) => setSaveState({ type: 'ok', message })
   const setError = (message: string) => setSaveState({ type: 'error', message })
 
-  const saveModel = async () => {
+  const loadModelConfig = useCallback(async () => {
+    setModelLoading(true)
+    try {
+      const data = await getJson('/api/settings/model-config')
+      const config = data.config as ModelConfigPayload | undefined
+      if (!config) throw new Error('Model config response missing data')
+
+      const configuredEnabledModels = uniqueNonEmpty(config.enabledModels || [])
+      const configuredAvailableModels = uniqueNonEmpty(config.availableModels || [])
+      const baseModels = configuredEnabledModels.length > 0 ? configuredEnabledModels : configuredAvailableModels
+      const mergedModels = uniqueNonEmpty([...baseModels, ...configuredAvailableModels, ...FALLBACK_MODEL_OPTIONS])
+
+      setEnabledModels(configuredEnabledModels)
+      setAvailableModels(mergedModels)
+
+      setModelPrimary(config.primary || mergedModels[0] || FALLBACK_MODEL_OPTIONS[0])
+      setModelFallbacks(config.fallbacks || [])
+      setSubagentModel(config.subagentModel || config.primary || mergedModels[0] || FALLBACK_MODEL_OPTIONS[0])
+      setEmbeddingModel(config.embeddingModel || '')
+      setMemoryFallback(config.memoryFallback || '')
+      setAgentModels(config.agents || [])
+      setCronModels(config.cronModels || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load model config')
+    } finally {
+      setModelLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadModelConfig()
+  }, [loadModelConfig])
+
+  const modelOptions = useMemo(() => {
+    const preferred = enabledModels.length > 0 ? enabledModels : availableModels
+    const inUse = [
+      modelPrimary,
+      subagentModel,
+      embeddingModel,
+      ...modelFallbacks,
+      ...agentModels.map((agent) => agent.model),
+      ...cronModels.map((job) => job.model),
+    ]
+
+    return uniqueNonEmpty([...preferred, ...availableModels, ...inUse, ...FALLBACK_MODEL_OPTIONS])
+  }, [
+    enabledModels,
+    availableModels,
+    modelPrimary,
+    subagentModel,
+    embeddingModel,
+    modelFallbacks,
+    agentModels,
+    cronModels,
+  ])
+
+  const defaultModelChoice = modelOptions[0] || ''
+
+  const addFallbackModel = () => {
+    const firstUnused = modelOptions.find((model) => !modelFallbacks.includes(model))
+    const nextModel = firstUnused || defaultModelChoice
+    if (!nextModel) return
+    setModelFallbacks((prev) => [...prev, nextModel])
+  }
+
+  const updateFallbackModel = (index: number, value: string) => {
+    setModelFallbacks((prev) => prev.map((model, i) => (i === index ? value : model)))
+  }
+
+  const removeFallbackModel = (index: number) => {
+    setModelFallbacks((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const updateAgentModel = (id: string, model: string) => {
+    setAgentModels((prev) => prev.map((agent) => (agent.id === id ? { ...agent, model } : agent)))
+  }
+
+  const updateCronModel = (id: string, model: string) => {
+    setCronModels((prev) => prev.map((job) => (job.id === id ? { ...job, model } : job)))
+  }
+
+  const saveModelConfig = async () => {
+    if (!modelPrimary.trim()) {
+      setError('Primary model cannot be empty.')
+      return
+    }
+
+    if (!subagentModel.trim()) {
+      setError('Sub-agent model cannot be empty.')
+      return
+    }
+
     setModelSaving(true)
     try {
-      const result = await postJson('/api/settings/model', {
-        model: selectedModel,
+      const payload = {
+        primary: modelPrimary.trim(),
+        fallbacks: uniqueNonEmpty(modelFallbacks),
+        subagentModel: subagentModel.trim(),
+        embeddingModel: embeddingModel.trim(),
+        memoryFallback: memoryFallback.trim(),
+        agents: agentModels.map((agent) => ({ id: agent.id, model: agent.model.trim() })),
+        cronModels: cronModels.map((job) => ({ id: job.id, model: job.model.trim() })),
         restart: restartGatewayOnModelChange,
-      })
+        ensurePhoneAccess: ensurePhoneAccessAfterRestart,
+      }
+
+      const result = await postJson('/api/settings/model-config', payload)
+
       const restarted = Boolean(result.restarted)
-      setOk(restarted
-        ? `Model saved to ${selectedModel}. Gateway restarted.`
-        : `Model saved to ${selectedModel}.`)
+      const phoneAccess = result.phoneAccess as { ok?: boolean; target?: string } | undefined
+
+      let message = restarted
+        ? 'Model settings saved. Gateway restarted.'
+        : 'Model settings saved.'
+
+      if (restarted && ensurePhoneAccessAfterRestart) {
+        if (phoneAccess?.ok) {
+          message += ` Phone access re-bound to ${phoneAccess.target || 'DashBot'}.`
+        } else {
+          message += ' Gateway restarted, but phone access check did not confirm re-bind.'
+        }
+      }
+
+      setOk(message)
+      await loadModelConfig()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update model')
+      setError(err instanceof Error ? err.message : 'Failed to update model settings')
     } finally {
       setModelSaving(false)
     }
@@ -344,39 +510,191 @@ export default function SettingsIndex() {
                   <Cpu className="size-3.5 text-violet-400" />
                   Models
                 </CardTitle>
-                <CardDescription>Set your default OpenClaw model</CardDescription>
+                <CardDescription>Edit primary/fallback models, agent assignments, cron models, and restart behavior</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-dashbot-text text-sm font-medium block mb-1.5">Primary model</label>
-                    <select
-                      value={selectedModel}
-                      onChange={(e) => setSelectedModel(e.target.value)}
-                      className="w-full rounded-lg bg-dashbot-surface border border-dashbot-border px-2.5 py-2 text-sm text-dashbot-text"
+                {modelLoading ? (
+                  <p className="text-sm text-dashbot-muted">Loading model configuration…</p>
+                ) : (
+                  <div className="space-y-4">
+                    {enabledModels.length > 0 ? (
+                      <p className="text-[11px] text-dashbot-muted">
+                        Showing enabled OpenClaw models ({enabledModels.length})
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-yellow-300/80">
+                        Enabled model registry was empty — showing known/in-use models.
+                      </p>
+                    )}
+
+                    <div>
+                      <label className="text-dashbot-text text-sm font-medium block mb-1.5">Primary default model</label>
+                      <select
+                        value={modelPrimary}
+                        onChange={(e) => setModelPrimary(e.target.value)}
+                        className="w-full rounded-lg bg-dashbot-surface border border-dashbot-border px-2.5 py-2 text-sm text-dashbot-text"
+                      >
+                        {modelOptions.length === 0 ? (
+                          <option value="">No models available</option>
+                        ) : (
+                          modelOptions.map((model) => (
+                            <option key={model} value={model}>{model}</option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-dashbot-text text-sm font-medium">Fallback chain (in order)</label>
+                        <button
+                          type="button"
+                          onClick={addFallbackModel}
+                          disabled={modelOptions.length === 0}
+                          className="px-2 py-1 rounded text-xs font-medium text-dashbot-text border border-dashbot-border hover:bg-dashbot-surface disabled:opacity-40"
+                        >
+                          <Plus className="size-3 inline mr-0.5" /> Add fallback
+                        </button>
+                      </div>
+
+                      {modelFallbacks.length === 0 ? (
+                        <p className="text-xs text-dashbot-muted">No fallbacks configured.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {modelFallbacks.map((fallback, index) => (
+                            <div key={`${fallback}-${index}`} className="grid grid-cols-[36px_1fr_auto] items-center gap-2">
+                              <span className="text-[11px] text-dashbot-muted text-right">#{index + 1}</span>
+                              <select
+                                value={fallback}
+                                onChange={(e) => updateFallbackModel(index, e.target.value)}
+                                className="w-full rounded bg-dashbot-bg border border-dashbot-border px-2 py-1.5 text-xs text-dashbot-text"
+                              >
+                                {modelOptions.map((model) => (
+                                  <option key={model} value={model}>{model}</option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => removeFallbackModel(index)}
+                                className="px-2 py-1 rounded text-[11px] font-medium text-red-300 border border-red-400/30 hover:bg-red-500/10"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-dashbot-text text-sm font-medium block mb-1.5">Default sub-agent model</label>
+                      <select
+                        value={subagentModel}
+                        onChange={(e) => setSubagentModel(e.target.value)}
+                        className="w-full rounded-lg bg-dashbot-surface border border-dashbot-border px-2.5 py-2 text-sm text-dashbot-text"
+                      >
+                        {modelOptions.map((model) => (
+                          <option key={model} value={model}>{model}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-dashbot-text text-sm font-medium block mb-1.5">Memory embedding model</label>
+                        <select
+                          value={embeddingModel}
+                          onChange={(e) => setEmbeddingModel(e.target.value)}
+                          className="w-full rounded-lg bg-dashbot-surface border border-dashbot-border px-2.5 py-2 text-sm text-dashbot-text"
+                        >
+                          <option value="">(none)</option>
+                          {modelOptions.map((model) => (
+                            <option key={model} value={model}>{model}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-dashbot-text text-sm font-medium block mb-1.5">Memory fallback provider</label>
+                        <input
+                          value={memoryFallback}
+                          onChange={(e) => setMemoryFallback(e.target.value)}
+                          className="w-full rounded-lg bg-dashbot-surface border border-dashbot-border px-2.5 py-2 text-sm text-dashbot-text"
+                          placeholder="gemini"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-dashbot-text text-sm font-medium block mb-1.5">Agent model assignments</label>
+                      <div className="rounded-lg border border-dashbot-border bg-dashbot-surface/40 max-h-56 overflow-y-auto">
+                        {agentModels.map((agent) => (
+                          <div key={agent.id} className="grid grid-cols-[minmax(0,180px)_1fr] gap-2 items-center px-2.5 py-2 border-b last:border-b-0 border-dashbot-border">
+                            <span className="text-xs text-dashbot-muted font-mono truncate" title={agent.id}>{agent.id}</span>
+                            <select
+                              value={agent.model}
+                              onChange={(e) => updateAgentModel(agent.id, e.target.value)}
+                              className="w-full rounded bg-dashbot-bg border border-dashbot-border px-2 py-1.5 text-xs text-dashbot-text"
+                            >
+                              {modelOptions.map((model) => (
+                                <option key={model} value={model}>{model}</option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-dashbot-text text-sm font-medium block mb-1.5">Cron job model overrides</label>
+                      <div className="rounded-lg border border-dashbot-border bg-dashbot-surface/40 max-h-52 overflow-y-auto">
+                        {cronModels.length === 0 ? (
+                          <p className="text-xs text-dashbot-muted px-2.5 py-2">No agentTurn cron jobs found.</p>
+                        ) : cronModels.map((job) => (
+                          <div key={job.id} className="grid grid-cols-[minmax(0,1fr)_1fr] gap-2 items-center px-2.5 py-2 border-b last:border-b-0 border-dashbot-border">
+                            <div className="min-w-0">
+                              <p className="text-xs text-dashbot-text truncate" title={job.name}>{job.name}</p>
+                              <p className="text-[11px] text-dashbot-muted">{job.enabled ? 'Enabled' : 'Disabled'}</p>
+                            </div>
+                            <select
+                              value={job.model}
+                              onChange={(e) => updateCronModel(job.id, e.target.value)}
+                              className="w-full rounded bg-dashbot-bg border border-dashbot-border px-2 py-1.5 text-xs text-dashbot-text"
+                            >
+                              {modelOptions.map((model) => (
+                                <option key={model} value={model}>{model}</option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="divide-y divide-dashbot-border rounded-lg border border-dashbot-border px-2.5">
+                      <ToggleRow
+                        label="Restart gateway after save"
+                        description="Applies changes immediately (brief reconnect)"
+                        enabled={restartGatewayOnModelChange}
+                        onToggle={() => setRestartGatewayOnModelChange((v) => !v)}
+                      />
+
+                      <ToggleRow
+                        label="Re-bind DashBot phone URL after restart"
+                        description="Keeps Tailscale/Safari access working after gateway restarts"
+                        enabled={ensurePhoneAccessAfterRestart}
+                        onToggle={() => setEnsurePhoneAccessAfterRestart((v) => !v)}
+                      />
+                    </div>
+
+                    <button
+                      onClick={saveModelConfig}
+                      disabled={modelSaving}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-dashbot-primary hover:opacity-90 disabled:opacity-50"
                     >
-                      {MODEL_OPTIONS.map((model) => (
-                        <option key={model} value={model}>{model}</option>
-                      ))}
-                    </select>
+                      <Save className="size-3.5 inline mr-1" />
+                      {modelSaving ? 'Saving…' : 'Save Model Settings'}
+                    </button>
                   </div>
-
-                  <ToggleRow
-                    label="Restart gateway after change"
-                    description="Applies model immediately (brief reconnect)"
-                    enabled={restartGatewayOnModelChange}
-                    onToggle={() => setRestartGatewayOnModelChange(v => !v)}
-                  />
-
-                  <button
-                    onClick={saveModel}
-                    disabled={modelSaving}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-dashbot-primary hover:opacity-90 disabled:opacity-50"
-                  >
-                    <Save className="size-3.5 inline mr-1" />
-                    {modelSaving ? 'Saving…' : 'Save Model'}
-                  </button>
-                </div>
+                )}
               </CardContent>
             </Card>
 
