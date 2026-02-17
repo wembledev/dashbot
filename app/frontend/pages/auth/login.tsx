@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
@@ -9,6 +9,17 @@ interface Props {
 export default function Login({ token }: Props) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [redirectPath, setRedirectPath] = useState('/dashboard')
+
+  useEffect(() => {
+    if (!success) return
+
+    const timer = setTimeout(() => {
+      window.location.assign(redirectPath)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [success, redirectPath])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -25,6 +36,7 @@ export default function Login({ token }: Props) {
       })
       const data = await res.json()
       if (res.ok) {
+        setRedirectPath(data.redirect || '/dashboard')
         setSuccess(true)
       } else {
         setError(data.error || 'Login failed')
@@ -41,7 +53,12 @@ export default function Login({ token }: Props) {
           <CardHeader>
             <div className="text-7xl mb-4">✅</div>
             <CardTitle className="text-3xl font-light tracking-wider">You're In!</CardTitle>
-            <CardDescription>You'll be logged in automatically on your other device. You can close this window.</CardDescription>
+            <CardDescription>Logging you into this device now…</CardDescription>
+            <div className="pt-3">
+              <Button asChild className="w-full">
+                <a href={redirectPath}>Open Dashboard Now</a>
+              </Button>
+            </div>
           </CardHeader>
         </Card>
       </div>

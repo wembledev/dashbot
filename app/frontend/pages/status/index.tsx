@@ -43,6 +43,7 @@ function StatusContent({ status_data: initialData, initial_events: initialEvents
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [refreshing, setRefreshing] = useState(false)
   const [connected, setConnected] = useState(false)
+  const [sessionActionError, setSessionActionError] = useState<string | null>(null)
   const subscriptionRef = useRef<Subscription | null>(null)
   const eventsSubRef = useRef<Subscription | null>(null)
   const { carMode } = useCarMode()
@@ -73,27 +74,38 @@ function StatusContent({ status_data: initialData, initial_events: initialEvents
       .finally(() => setRefreshing(false))
   }, [])
 
-  const handleCloseSession = useCallback((sessionKey: string) => {
-    fetch(`/status/sessions/${encodeURIComponent(sessionKey)}`, {
-      method: 'DELETE',
-      headers: {
-        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-      },
-      credentials: 'same-origin',
-    })
-      .then(res => res.json())
-      .then(() => {
-        setData(prev => ({
-          ...prev,
-          sessions: prev.sessions.filter(s => s.key !== sessionKey),
-          agent_status: {
-            ...prev.agent_status,
-            session_count: Math.max(0, prev.agent_status.session_count - 1),
-          },
-        }))
+  const handleCloseSession = useCallback(async (sessionKey: string) => {
+    setSessionActionError(null)
+
+    try {
+      const res = await fetch(`/status/sessions/${encodeURIComponent(sessionKey)}`, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'Accept': 'application/json',
+        },
+        credentials: 'same-origin',
       })
-      .catch(() => {})
-  }, [])
+
+      const payload = await res.json().catch(() => ({} as { error?: string; deleted?: boolean }))
+      if (!res.ok || payload?.error || payload?.deleted !== true) {
+        throw new Error(payload?.error || 'Session was not deleted')
+      }
+
+      setData(prev => ({
+        ...prev,
+        sessions: prev.sessions.filter(s => s.key !== sessionKey),
+        agent_status: {
+          ...prev.agent_status,
+          session_count: Math.max(0, prev.agent_status.session_count - 1),
+        },
+      }))
+
+      refreshData()
+    } catch (err) {
+      setSessionActionError(err instanceof Error ? err.message : 'Failed to close session')
+    }
+  }, [refreshData])
 
   // Subscribe to StatusChannel for real-time status updates
   useEffect(() => {
@@ -190,6 +202,12 @@ function StatusContent({ status_data: initialData, initial_events: initialEvents
               </button>
             </div>
           </div>
+
+          {sessionActionError && (
+            <div className="mb-2 rounded border border-red-500/30 bg-red-500/10 px-2.5 py-2 text-xs text-red-300">
+              {sessionActionError}
+            </div>
+          )}
 
           {/* Status grid */}
           {carMode ? (

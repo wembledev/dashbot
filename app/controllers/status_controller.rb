@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+require "json"
+require "open3"
+require "timeout"
+
 class StatusController < ApplicationController
   def index
     render inertia: "status/index", props: {
@@ -27,26 +31,84 @@ class StatusController < ApplicationController
     head :ok
   end
 
-  # DELETE /status/sessions/:key - close a session (cookie-auth for dashboard users)
+  # DELETE /status/sessions/:key - close/archive a session (cookie-auth for dashboard users)
   def close_session
-    session_key = params[:key]
+    session_key = params[:key].to_s.strip
+    return render json: { error: "Session key required" }, status: :unprocessable_entity if session_key.blank?
 
-    # Don't allow closing the main session
-    if session_key.match?(/agent:\w+:main$/)
+    if main_session_key?(session_key)
       render json: { error: "Cannot close main session" }, status: :forbidden
       return
     end
 
-    # Send kill request to plugin via ActionCable
-    ActionCable.server.broadcast("plugin_commands", {
-      type: "session_kill",
-      session_key: session_key
+    out, err, status = gateway_call("sessions.delete", {
+      key: session_key,
+      deleteTranscript: true
     })
 
-    render json: { ok: true, message: "Session close requested", session_key: session_key }
+    unless status.success?
+      return render json: {
+        error: err.presence || out.presence || "Failed to close session"
+      }, status: :unprocessable_entity
+    end
+
+    payload = JSON.parse(out.presence || "{}")
+    unless payload["ok"] == true
+      return render json: {
+        error: payload["error"].presence || "Failed to close session",
+        payload: payload
+      }, status: :unprocessable_entity
+    end
+
+    unless payload["deleted"] == true
+      return render json: {
+        error: "Session was not deleted by gateway",
+        payload: payload
+      }, status: :unprocessable_entity
+    end
+
+    render json: {
+      ok: true,
+      session_key: session_key,
+      deleted: true,
+      archived: payload["archived"] || []
+    }
+  rescue Timeout::Error
+    render json: { error: "Session close timed out" }, status: :request_timeout
+  rescue JSON::ParserError
+    render json: { error: "Session close returned invalid JSON" }, status: :unprocessable_entity
+  rescue StandardError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   private
+
+  def main_session_key?(session_key)
+    return true if session_key == "main"
+
+    parts = session_key.split(":")
+    parts.length == 3 && parts.first == "agent" && parts.last == "main"
+  end
+
+  def gateway_call(method, params)
+    out = +""
+    err = +""
+    status = nil
+
+    Timeout.timeout(20) do
+      env = {
+        "PATH" => "#{File.expand_path("~/.bun/bin")}:#{ENV.fetch("PATH", "")}" 
+      }
+      out, err, status = Open3.capture3(
+        env,
+        "openclaw", "gateway", "call", method,
+        "--json",
+        "--params", params.to_json
+      )
+    end
+
+    [out.strip, err.strip, status]
+  end
 
   def fetch_status_data
     # Read pre-formatted status data pushed by the OpenClaw dashbot plugin

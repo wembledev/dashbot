@@ -3,7 +3,7 @@ import { cable } from '@/lib/cable'
 import type { Subscription } from '@rails/actioncable'
 import type { SidebarData, SidebarAgent, SidebarSession, SidebarCron, AgentStatus } from '@/types/sidebar'
 import type { StatusData, AgentEvent } from '@/types/status'
-import { parseSessionType } from '@/lib/sessions'
+import { parseSession } from '@/lib/sessions'
 
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${Math.round(seconds)}s`
@@ -57,59 +57,30 @@ function deriveSubAgents(events: AgentEvent[]): SidebarAgent[] {
 
 /** Map sessions to sidebar-friendly format */
 function mapSessions(sessions: StatusData['sessions']): SidebarSession[] {
-  return sessions.map(s => {
-    const type = parseSessionType(s.key)
-    const label = (() => {
-      const parts = s.key.split(':')
-      if (type === 'main') return 'Main Session'
-      if (type === 'dashbot') return 'DashBot Chat'
-      if (type === 'cron') {
-        const name = parts.slice(3).join(':')
-        return name.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-      }
-      if (type === 'channel') {
-        const name = parts.slice(3).join(':')
-        return name.charAt(0).toUpperCase() + name.slice(1)
-      }
-      if (type === 'subagent') {
-        const id = parts.slice(3).join(':')
-        return `Sub: ${id.slice(0, 8)}`
-      }
-      return s.key
-    })()
+  return sessions.map((session) => {
+    const parsed = parseSession(session)
 
-    // Infer channel from key
     const channel = (() => {
-      if (type === 'channel') {
-        const parts = s.key.split(':')
-        return parts[3] || undefined
-      }
+      if (parsed.type !== 'channel') return undefined
+      const parts = session.key.split(':').filter(Boolean)
+      const lower = parts.map((p) => p.toLowerCase())
+      const channelIdx = lower.lastIndexOf('channel')
+      if (channelIdx > 0) return parts[channelIdx - 1]
+      if (parts.length >= 3) return parts[2]
       return undefined
     })()
 
-    // Infer status
-    let status: SidebarSession['status'] = 'active'
-    if (s.context_percent > 95) status = 'failed'
-    else {
-      const ageMatch = s.age.match(/(\d+)([hmd])/)
-      if (ageMatch) {
-        const value = parseInt(ageMatch[1])
-        const unit = ageMatch[2]
-        if ((unit === 'h' && value >= 2) || unit === 'd') status = 'idle'
-      }
-    }
-
     return {
-      key: s.key,
-      type,
-      label,
-      status,
-      model: s.model,
-      contextPercent: s.context_percent,
-      kind: s.kind,
+      key: session.key,
+      type: parsed.type,
+      label: parsed.label,
+      status: parsed.status,
+      model: session.model,
+      contextPercent: session.context_percent,
+      kind: session.kind,
       channel,
-      age: s.age,
-      tokens: s.tokens,
+      age: session.age,
+      tokens: session.tokens,
     }
   })
 }

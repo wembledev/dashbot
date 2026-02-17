@@ -50,6 +50,7 @@ Your OpenClaw AI agent runs on the gateway. The [dashbot-openclaw](https://githu
 - 🔌 **OpenClaw plugin** — Drop-in integration via [dashbot-openclaw](https://github.com/wembledev/dashbot-openclaw)
 - 🔐 **QR code login** — Scan to authenticate from any device
 - 🌙 **Dark mode** — Full theme support with system preference detection
+- ⚙️ **Settings that work** — Configure default model, save quick memory notes, trigger memory reindex, and tune notifications
 - 📱 **Responsive** — Mobile-first design that scales to desktop
 
 ## Getting Started
@@ -81,6 +82,10 @@ Configure `.env`:
 ```env
 DASHBOT_PASSWORD=<pick a password>
 DASHBOT_API_TOKEN=<generate with: ruby -e "require 'securerandom'; puts SecureRandom.hex(32)">
+
+# Optional but recommended when accessing from phone/Tailscale.
+# Used for QR login links + host authorization.
+DASHBOT_PUBLIC_URL=https://<your-tailnet-host>.ts.net
 ```
 
 ### Run

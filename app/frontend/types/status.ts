@@ -6,6 +6,8 @@ export interface SessionInfo {
   context_percent: number
   age: string
   flags: string
+  display_name?: string
+  chat_type?: string
 }
 
 // Parsed session type for UI display

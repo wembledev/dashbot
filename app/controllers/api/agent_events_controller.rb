@@ -26,7 +26,29 @@ class Api::AgentEventsController < ActionController::API
   # POST /api/agent/events
   # Log a new agent event (called by OpenClaw plugin/agent)
   def create
-    event = AgentEvent.new(event_params)
+    attrs = event_params.to_h
+
+    # Prevent duplicate "spawned" events for the same session key.
+    if attrs["event_type"] == "spawned" && attrs["session_key"].present?
+      existing = AgentEvent.find_by(event_type: "spawned", session_key: attrs["session_key"])
+      if existing
+        return render json: { ok: true, deduped: true, event: existing.as_broadcast }, status: :ok
+      end
+    end
+
+    # If the producer provides an authoritative spawn timestamp, preserve it.
+    spawned_at_ms = attrs.dig("metadata", "spawned_at")
+    if attrs["event_type"] == "spawned" && spawned_at_ms.present?
+      begin
+        t = Time.at(spawned_at_ms.to_f / 1000.0).utc
+        attrs["created_at"] = t
+        attrs["updated_at"] = t
+      rescue StandardError
+        # Fall back to default timestamps.
+      end
+    end
+
+    event = AgentEvent.new(attrs)
 
     if event.save
       render json: { ok: true, event: event.as_broadcast }, status: :created

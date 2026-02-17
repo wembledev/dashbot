@@ -1,4 +1,5 @@
 require "active_support/core_ext/integer/time"
+require "uri"
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -69,4 +70,23 @@ Rails.application.configure do
 
   # Allow Action Cable connections without an Origin header (e.g., server-side plugins).
   config.action_cable.disable_request_forgery_protection = true
+
+  # Allow DashBot over Tailscale / public URL during development.
+  # This prevents Rails Host Authorization from blocking QR login handoff.
+  if (public_url = ENV["DASHBOT_PUBLIC_URL"].presence)
+    begin
+      uri = URI.parse(public_url)
+      if uri.host.present?
+        config.hosts << uri.host
+        # Defensive: normalize Unicode dash variants some mobile scanners may emit.
+        normalized = uri.host.tr("‐‑‒–—―", "-")
+        config.hosts << normalized if normalized != uri.host
+      end
+    rescue URI::InvalidURIError
+      # Ignore invalid env value and keep default host rules.
+    end
+  end
+
+  # Also allow Tailscale MagicDNS hostnames.
+  config.hosts << /.*\.ts\.net/ 
 end
