@@ -1,11 +1,24 @@
 import { useState, useEffect, useMemo } from 'react'
 import { router } from '@inertiajs/react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Sun, Moon, Monitor, Trash2, MessageSquare, Brain, Bell, Cpu, LogOut } from 'lucide-react'
+import { Sun, Moon, Monitor, Trash2, MessageSquare, Brain, Bell, BellRing, Cpu, LogOut, RefreshCw, Save } from 'lucide-react'
 import HelpButton from '@/components/status/help-button'
 import { useCarMode } from '@/contexts/car-mode-context'
 
 type ThemePreference = 'system' | 'dark' | 'light'
+
+type SaveState = {
+  type: 'idle' | 'ok' | 'error'
+  message: string
+}
+
+const MODEL_OPTIONS = [
+  'openai-codex/gpt-5.3-codex',
+  'anthropic/claude-opus-4-6',
+  'anthropic/claude-sonnet-4-5',
+  'openrouter/minimax/minimax-m2.5',
+  'openrouter/x-ai/grok-4.1-fast',
+]
 
 function resolveTheme(pref: ThemePreference): 'dark' | 'light' {
   if (pref === 'system') {
@@ -52,12 +65,31 @@ const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[
   { value: 'dark', label: 'Dark', icon: Moon },
 ]
 
-function SoonBadge() {
-  return (
-    <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">
-      Soon
-    </span>
-  )
+async function postJson(url: string, body: Record<string, unknown>) {
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrf,
+      'Accept': 'application/json',
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify(body),
+  })
+
+  let data: Record<string, unknown> = {}
+  try {
+    data = await res.json()
+  } catch {
+    // ignore parse failures
+  }
+
+  if (!res.ok) {
+    throw new Error((data.error as string) || 'Request failed')
+  }
+
+  return data
 }
 
 export default function SettingsIndex() {
@@ -68,30 +100,78 @@ export default function SettingsIndex() {
     return 'system'
   })
 
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dashbot-model-primary') || MODEL_OPTIONS[0]
+    }
+    return MODEL_OPTIONS[0]
+  })
+  const [restartGatewayOnModelChange, setRestartGatewayOnModelChange] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dashbot-model-restart') !== 'false'
+    }
+    return true
+  })
+  const [modelSaving, setModelSaving] = useState(false)
+
+  const [memoryNote, setMemoryNote] = useState('')
+  const [memorySaving, setMemorySaving] = useState(false)
+  const [memoryReindexing, setMemoryReindexing] = useState(false)
+
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('dashbot-notify-enabled') !== 'false'
+    return true
+  })
+  const [desktopNotifications, setDesktopNotifications] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('dashbot-notify-desktop') !== 'false'
+    return true
+  })
+  const [soundNotifications, setSoundNotifications] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('dashbot-notify-sound') !== 'false'
+    return true
+  })
+
+  const [saveState, setSaveState] = useState<SaveState>({ type: 'idle', message: '' })
+
   const { carMode, toggleCarMode } = useCarMode()
 
-  // Compute resolved theme without setState in effect
   const resolvedTheme = useMemo(() => {
     if (typeof window === 'undefined') return 'dark'
     return resolveTheme(themePref)
   }, [themePref])
 
-  // Apply theme to DOM whenever resolved theme changes
   useEffect(() => {
     applyTheme(resolvedTheme)
   }, [resolvedTheme])
 
-  // Save theme preference to localStorage
   useEffect(() => {
     localStorage.setItem('dashbot-theme', themePref)
   }, [themePref])
 
-  // Watch system preference changes when "system" is selected
+  useEffect(() => {
+    localStorage.setItem('dashbot-model-primary', selectedModel)
+  }, [selectedModel])
+
+  useEffect(() => {
+    localStorage.setItem('dashbot-model-restart', restartGatewayOnModelChange ? 'true' : 'false')
+  }, [restartGatewayOnModelChange])
+
+  useEffect(() => {
+    localStorage.setItem('dashbot-notify-enabled', notificationsEnabled ? 'true' : 'false')
+  }, [notificationsEnabled])
+
+  useEffect(() => {
+    localStorage.setItem('dashbot-notify-desktop', desktopNotifications ? 'true' : 'false')
+  }, [desktopNotifications])
+
+  useEffect(() => {
+    localStorage.setItem('dashbot-notify-sound', soundNotifications ? 'true' : 'false')
+  }, [soundNotifications])
+
   useEffect(() => {
     if (themePref !== 'system') return
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const handler = () => {
-      // Trigger re-computation by forcing a state update
       setThemePref('system')
     }
     mq.addEventListener('change', handler)
@@ -104,6 +184,95 @@ export default function SettingsIndex() {
     }
   }
 
+  const setOk = (message: string) => setSaveState({ type: 'ok', message })
+  const setError = (message: string) => setSaveState({ type: 'error', message })
+
+  const saveModel = async () => {
+    setModelSaving(true)
+    try {
+      const result = await postJson('/api/settings/model', {
+        model: selectedModel,
+        restart: restartGatewayOnModelChange,
+      })
+      const restarted = Boolean(result.restarted)
+      setOk(restarted
+        ? `Model saved to ${selectedModel}. Gateway restarted.`
+        : `Model saved to ${selectedModel}.`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update model')
+    } finally {
+      setModelSaving(false)
+    }
+  }
+
+  const saveMemoryNote = async () => {
+    if (!memoryNote.trim()) {
+      setError('Write a memory note first.')
+      return
+    }
+    setMemorySaving(true)
+    try {
+      await postJson('/api/memory/save', { note: memoryNote })
+      setMemoryNote('')
+      setOk('Memory note saved.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save memory note')
+    } finally {
+      setMemorySaving(false)
+    }
+  }
+
+  const reindexMemory = async () => {
+    setMemoryReindexing(true)
+    try {
+      const result = await postJson('/api/memory/reindex', {})
+      const mode = (result.mode as string) || 'default'
+      setOk(`Memory reindex started (${mode}).`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reindex memory')
+    } finally {
+      setMemoryReindexing(false)
+    }
+  }
+
+  const testNotification = async () => {
+    if (!notificationsEnabled) {
+      setError('Enable notifications first.')
+      return
+    }
+
+    try {
+      if (desktopNotifications && 'Notification' in window) {
+        if (Notification.permission === 'default') {
+          await Notification.requestPermission()
+        }
+        if (Notification.permission === 'granted') {
+          new Notification('DashBot test', {
+            body: 'Notifications are enabled and working.',
+            icon: '/icon.png',
+          })
+        }
+      }
+
+      if (soundNotifications) {
+        const ctx = new AudioContext()
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.type = 'sine'
+        osc.frequency.value = 880
+        gain.gain.value = 0.05
+        osc.start()
+        osc.stop(ctx.currentTime + 0.15)
+      }
+
+      setOk('Notification test sent.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Notification test failed')
+    }
+  }
+
   return (
     <div className="h-full overflow-y-auto bg-dashbot-bg">
       <div className="px-2 sm:px-3 pb-3">
@@ -112,9 +281,19 @@ export default function SettingsIndex() {
             <h1 className="text-sm sm:text-base font-medium text-dashbot-text">Settings</h1>
             <HelpButton
               topic="Settings"
-              context="DashBot Settings page. Configure appearance (system/dark/light theme, car mode for Tesla browser), chat settings (clear history), and manage your session. Models, Memory, and Notifications sections are coming soon. What settings are available? How does car mode work?"
+              context="DashBot Settings page. Configure appearance, model defaults, memory actions, notifications, and session controls."
             />
           </div>
+
+          {saveState.type !== 'idle' && (
+            <div className={`mb-2 rounded border px-2.5 py-2 text-xs ${
+              saveState.type === 'ok'
+                ? 'border-green-500/30 bg-green-500/10 text-green-300'
+                : 'border-red-500/30 bg-red-500/10 text-red-300'
+            }`}>
+              {saveState.message}
+            </div>
+          )}
 
           <div className="space-y-2">
             {/* Appearance */}
@@ -128,7 +307,6 @@ export default function SettingsIndex() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 divide-y divide-dashbot-border">
-                  {/* Theme selector */}
                   <div className="py-2">
                     <p className="text-dashbot-text text-sm font-medium mb-2">Theme</p>
                     <div className="flex rounded-lg border border-dashbot-border overflow-hidden">
@@ -147,17 +325,147 @@ export default function SettingsIndex() {
                         </button>
                       ))}
                     </div>
-                    <p className="text-dashbot-muted text-xs mt-1.5">
-                      {themePref === 'system' ? 'Follows your operating system preference' :
-                       themePref === 'light' ? 'Always use light colors' : 'Always use dark colors'}
-                    </p>
                   </div>
+
                   <ToggleRow
                     label="Car Mode"
                     description="Larger text and buttons for driving (Tesla browser)"
                     enabled={carMode}
                     onToggle={toggleCarMode}
                   />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Models */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
+                  <Cpu className="size-3.5 text-violet-400" />
+                  Models
+                </CardTitle>
+                <CardDescription>Set your default OpenClaw model</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-dashbot-text text-sm font-medium block mb-1.5">Primary model</label>
+                    <select
+                      value={selectedModel}
+                      onChange={(e) => setSelectedModel(e.target.value)}
+                      className="w-full rounded-lg bg-dashbot-surface border border-dashbot-border px-2.5 py-2 text-sm text-dashbot-text"
+                    >
+                      {MODEL_OPTIONS.map((model) => (
+                        <option key={model} value={model}>{model}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <ToggleRow
+                    label="Restart gateway after change"
+                    description="Applies model immediately (brief reconnect)"
+                    enabled={restartGatewayOnModelChange}
+                    onToggle={() => setRestartGatewayOnModelChange(v => !v)}
+                  />
+
+                  <button
+                    onClick={saveModel}
+                    disabled={modelSaving}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-dashbot-primary hover:opacity-90 disabled:opacity-50"
+                  >
+                    <Save className="size-3.5 inline mr-1" />
+                    {modelSaving ? 'Saving…' : 'Save Model'}
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Memory */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
+                  <Brain className="size-3.5 text-cyan-400" />
+                  Memory
+                </CardTitle>
+                <CardDescription>Capture notes and reindex memory</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-dashbot-text text-sm font-medium block mb-1.5">Quick memory note</label>
+                    <textarea
+                      value={memoryNote}
+                      onChange={(e) => setMemoryNote(e.target.value)}
+                      rows={3}
+                      placeholder="Save a durable note for later recall…"
+                      className="w-full rounded-lg bg-dashbot-surface border border-dashbot-border px-2.5 py-2 text-sm text-dashbot-text"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={saveMemoryNote}
+                      disabled={memorySaving}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-dashbot-primary hover:opacity-90 disabled:opacity-50"
+                    >
+                      <Save className="size-3.5 inline mr-1" />
+                      {memorySaving ? 'Saving…' : 'Save Note'}
+                    </button>
+
+                    <button
+                      onClick={reindexMemory}
+                      disabled={memoryReindexing}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium text-dashbot-text border border-dashbot-border hover:bg-dashbot-surface disabled:opacity-50"
+                    >
+                      <RefreshCw className={`size-3.5 inline mr-1 ${memoryReindexing ? 'animate-spin' : ''}`} />
+                      {memoryReindexing ? 'Reindexing…' : 'Reindex Memory'}
+                    </button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Notifications */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
+                  <Bell className="size-3.5 text-yellow-400" />
+                  Notifications
+                </CardTitle>
+                <CardDescription>Desktop + sound alert preferences</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 divide-y divide-dashbot-border">
+                  <ToggleRow
+                    label="Enable notifications"
+                    description="Master switch for alerting"
+                    enabled={notificationsEnabled}
+                    onToggle={() => setNotificationsEnabled(v => !v)}
+                  />
+
+                  <ToggleRow
+                    label="Desktop notifications"
+                    description="Show browser notifications for important events"
+                    enabled={desktopNotifications}
+                    onToggle={() => setDesktopNotifications(v => !v)}
+                  />
+
+                  <ToggleRow
+                    label="Sound notifications"
+                    description="Play sound when alerts fire"
+                    enabled={soundNotifications}
+                    onToggle={() => setSoundNotifications(v => !v)}
+                  />
+
+                  <div className="pt-2">
+                    <button
+                      onClick={testNotification}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium text-dashbot-text border border-dashbot-border hover:bg-dashbot-surface"
+                    >
+                      <BellRing className="size-3.5 inline mr-1" />
+                      Send Test Notification
+                    </button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -185,51 +493,6 @@ export default function SettingsIndex() {
                     Clear
                   </button>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Models (coming soon) */}
-            <Card className="opacity-60">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
-                  <Cpu className="size-3.5 text-violet-400" />
-                  Models
-                  <SoonBadge />
-                </CardTitle>
-                <CardDescription>AI model assignments and fallback hierarchy</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-dashbot-muted text-xs">Choose default model, set fallback hierarchy, and configure per-session overrides.</p>
-              </CardContent>
-            </Card>
-
-            {/* Memory (coming soon) */}
-            <Card className="opacity-60">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
-                  <Brain className="size-3.5 text-cyan-400" />
-                  Memory
-                  <SoonBadge />
-                </CardTitle>
-                <CardDescription>Vector search index and memory management</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-dashbot-muted text-xs">Save notes, browse memory files, re-index vectors, and manage the knowledge base.</p>
-              </CardContent>
-            </Card>
-
-            {/* Notifications (coming soon) */}
-            <Card className="opacity-60">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-1.5 text-dashbot-text">
-                  <Bell className="size-3.5 text-yellow-400" />
-                  Notifications
-                  <SoonBadge />
-                </CardTitle>
-                <CardDescription>Telegram pings, card alerts, digest frequency</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-dashbot-muted text-xs">Control when and how the agent notifies you about new items.</p>
               </CardContent>
             </Card>
 
