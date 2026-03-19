@@ -110,15 +110,13 @@ describe("StatusIndex", () => {
     expect(screen.getByRole("heading", { name: "Status" })).toBeInTheDocument()
   })
 
-  it("renders hierarchy widget", () => {
+  it("renders sessions widget", () => {
     renderWithProvider(<StatusIndex status_data={mockStatusData} />)
-    expect(screen.getByText("Agent Hierarchy")).toBeInTheDocument()
+    expect(screen.getByText("Sessions")).toBeInTheDocument()
   })
 
   it("renders supporting widgets", () => {
     renderWithProvider(<StatusIndex status_data={mockStatusData} />)
-    expect(screen.getByText("Live Token Burn")).toBeInTheDocument()
-    expect(screen.getByText("Session Health")).toBeInTheDocument()
     expect(screen.getByText("Cron Jobs")).toBeInTheDocument()
     expect(screen.getByText("Memory (QMD)")).toBeInTheDocument()
   })

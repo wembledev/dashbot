@@ -12,6 +12,7 @@ import type { SessionInfo, ParsedSession, SessionType, SessionStatus, SessionSaf
  */
 export function parseSessionType(key: string): SessionType {
   if (/agent:\w+:main$/.test(key)) return 'main'
+  if (/^dashbot:/.test(key)) return 'dashbot'
   if (/agent:\w+:cron:/.test(key)) return 'cron'
   if (/agent:\w+:subagent:/.test(key)) return 'subagent'
   if (/agent:\w+:channel:dashbot/.test(key)) return 'dashbot'
@@ -151,12 +152,3 @@ export function parseSessions(sessions: SessionInfo[]): ParsedSession[] {
     .sort((a, b) => ORDER[a.type] - ORDER[b.type])
 }
 
-/** Group sessions by their parent (main) for hierarchy display. */
-export function groupSessionsByParent(sessions: ParsedSession[]): {
-  main: ParsedSession | null
-  children: ParsedSession[]
-} {
-  const main = sessions.find(s => s.type === 'main') ?? null
-  const children = sessions.filter(s => s.type !== 'main')
-  return { main, children }
-}

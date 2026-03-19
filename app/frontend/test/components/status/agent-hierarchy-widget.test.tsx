@@ -1,18 +1,11 @@
 import { render, screen } from "@testing-library/react"
 import AgentHierarchyWidget from "@/components/status/agent-hierarchy-widget"
 
-const mockData = {
-  running: true,
-  session_count: 3,
-  main_session_age: "5m ago",
-  main_model: "claude-sonnet-4-5",
-}
-
 const mockSessions = [
   {
     key: "agent:main:main",
     kind: "direct",
-    model: "claude-sonnet-4-5",
+    model: "claude-sonnet-4-6",
     tokens: "50k/200k",
     context_percent: 25,
     age: "5m ago",
@@ -21,7 +14,7 @@ const mockSessions = [
   {
     key: "agent:main:cron:morning-briefing",
     kind: "direct",
-    model: "claude-sonnet-4-5",
+    model: "claude-sonnet-4-6",
     tokens: "2k/200k",
     context_percent: 1,
     age: "1h ago",
@@ -31,23 +24,23 @@ const mockSessions = [
 
 describe("AgentHierarchyWidget", () => {
   it("renders the widget title", () => {
-    render(<AgentHierarchyWidget data={mockData} sessions={mockSessions} />)
-    expect(screen.getByText("Agent Hierarchy")).toBeInTheDocument()
+    render(<AgentHierarchyWidget sessions={mockSessions} />)
+    expect(screen.getByText("Sessions")).toBeInTheDocument()
   })
 
-  it("shows the main agent card", () => {
-    render(<AgentHierarchyWidget data={mockData} sessions={mockSessions} />)
-    expect(screen.getByText("Main Agent")).toBeInTheDocument()
-    expect(screen.getByText("claude-sonnet-4-5")).toBeInTheDocument()
+  it("shows session count in description", () => {
+    render(<AgentHierarchyWidget sessions={mockSessions} />)
+    expect(screen.getByText("2 sessions")).toBeInTheDocument()
   })
 
-  it("shows sessions section (collapsed by default)", () => {
-    render(<AgentHierarchyWidget data={mockData} sessions={mockSessions} />)
-    expect(screen.getByText(/Sessions \(2\)/)).toBeInTheDocument()
+  it("renders session rows", () => {
+    render(<AgentHierarchyWidget sessions={mockSessions} />)
+    expect(screen.getByText("Main: Router session")).toBeInTheDocument()
+    expect(screen.getByText("Cron: Morning Briefing")).toBeInTheDocument()
   })
 
-  it("shows how agents work help", () => {
-    render(<AgentHierarchyWidget data={mockData} sessions={mockSessions} />)
-    expect(screen.getByText("How agents work")).toBeInTheDocument()
+  it("shows empty state when no sessions", () => {
+    render(<AgentHierarchyWidget sessions={[]} />)
+    expect(screen.getByText("No active sessions")).toBeInTheDocument()
   })
 })

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, Network } from 'lucide-react'
 import AgentList from './AgentList'
 import CronList from './CronList'
 import SessionList from './SessionList'
@@ -85,18 +85,23 @@ export default function MobileDrawer({ open, onClose, data, connected, selection
         </div>
 
         {/* All content scrolls together — Agents, Crons, Sessions */}
-        <div className="flex-1 overflow-y-auto">
-          <AgentList
-            mainAgent={data.mainAgent}
-            subAgents={data.subAgents}
-            sessions={data.sessions}
-            selection={selection}
-            onSelect={handleSelect}
-          />
+        {data.sessions.length === 0 && data.crons.length === 0 && !data.mainAgent.running ? (
+          <div className="flex-1 flex flex-col items-center justify-center px-4 text-dashbot-muted">
+            <Network className="size-6 mb-2 opacity-30" />
+            <p className="text-xs text-center">Waiting for OpenClaw...</p>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            <AgentList
+              mainAgent={data.mainAgent}
+              selection={selection}
+              onSelect={handleSelect}
+            />
 
-          <CronList crons={data.crons} selection={selection} onSelect={handleSelect} />
-          <SessionList sessions={data.sessions} selection={selection} onSelect={handleSelect} />
-        </div>
+            <CronList crons={data.crons} selection={selection} onSelect={handleSelect} />
+            <SessionList sessions={data.sessions} selection={selection} onSelect={handleSelect} />
+          </div>
+        )}
       </div>
     </>
   )

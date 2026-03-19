@@ -3,15 +3,14 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import HelpButton from './help-button'
 import { useCarMode } from '@/contexts/car-mode-context'
 import {
-  Bot, ChevronDown, ChevronRight, X, Info,
+  ChevronDown, ChevronRight, X,
   Zap, CheckCircle, XCircle, Pause,
   Network
 } from 'lucide-react'
-import { parseSessions, groupSessionsByParent } from '@/lib/sessions'
-import type { AgentStatusData, SessionInfo, ParsedSession, SessionStatus } from '@/types/status'
+import { parseSessions } from '@/lib/sessions'
+import type { SessionInfo, ParsedSession, SessionStatus } from '@/types/status'
 
 interface Props {
-  data: AgentStatusData
   sessions: SessionInfo[]
   onCloseSession?: (sessionKey: string) => void
 }
@@ -32,7 +31,6 @@ const TYPE_COLORS: Record<string, string> = {
   unknown:  'border-l-gray-500',
 }
 
-// ─── Session row ────────────────────────
 function SessionRow({ session, onClose }: { session: ParsedSession; onClose?: (key: string) => void }) {
   const [expanded, setExpanded] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -133,181 +131,34 @@ function SessionRow({ session, onClose }: { session: ParsedSession; onClose?: (k
   )
 }
 
-// ─── Architecture help ────────────────────────
-function ArchitectureHelp() {
-  const [show, setShow] = useState(false)
-
-  if (!show) {
-    return (
-      <button
-        onClick={() => setShow(true)}
-        className="flex items-center gap-1 text-[10px] sm:text-xs text-dashbot-muted hover:text-dashbot-text transition-colors"
-      >
-        <Info className="size-3" />
-        How agents work
-      </button>
-    )
-  }
-
-  return (
-    <div className="p-2.5 sm:p-3 rounded-lg bg-dashbot-primary/5 border border-dashbot-primary/20 text-[10px] sm:text-xs space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span className="font-medium text-dashbot-text">Agent Architecture</span>
-        <button onClick={() => setShow(false)} className="text-dashbot-muted hover:text-dashbot-text">
-          <X className="size-3" />
-        </button>
-      </div>
-      <p className="text-dashbot-muted">
-        <strong className="text-green-400">Main Agent</strong> — The router/orchestrator. Receives all messages and dispatches work.
-      </p>
-      <p className="text-dashbot-muted">
-        <strong className="text-amber-400">Crons</strong> — Scheduled tasks that run independently. Results saved for main agent.
-      </p>
-      <p className="text-dashbot-muted">
-        <strong className="text-blue-400">Channels</strong> — Active chat sessions (DashBot web, Discord, etc).
-      </p>
-    </div>
-  )
-}
-
-// ─── Main component ────────────────────────
-export default function AgentHierarchyWidget({ data, sessions, onCloseSession }: Props) {
+export default function AgentHierarchyWidget({ sessions, onCloseSession }: Props) {
   const { carMode } = useCarMode()
   const parsed = parseSessions(sessions)
-  const { main, children } = groupSessionsByParent(parsed)
-
-  const sessionsByType = {
-    channel: children.filter(s => s.type === 'dashbot' || s.type === 'channel'),
-    cron: children.filter(s => s.type === 'cron'),
-    other: children.filter(s => s.type === 'unknown' || s.type === 'subagent'),
-  }
-
-  const [showSessions, setShowSessions] = useState(false)
 
   return (
     <Card className={carMode ? 'car:border-2' : ''}>
       <CardHeader>
         <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-dashbot-text">
           <Network className="size-4 sm:size-5 car:size-6 text-dashbot-primary" />
-          <span className="car:text-lg">Agent Hierarchy</span>
-          <HelpButton topic="Agent Hierarchy" context={`Agent hierarchy showing: main agent (${data.main_model}), ${parsed.length} sessions. How does the agent hierarchy work?`} />
+          <span className="car:text-lg">Sessions</span>
+          <HelpButton topic="Sessions" context={`${parsed.length} session${parsed.length !== 1 ? 's' : ''}. Sessions are active conversations with different models.`} />
         </CardTitle>
         <CardDescription className="car:text-sm">
-          {data.running
-            ? `${data.session_count} session${data.session_count !== 1 ? 's' : ''}`
-            : 'Agent stopped'}
+          {parsed.length} session{parsed.length !== 1 ? 's' : ''}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3 sm:space-y-4">
-
-          {/* ─── Main Agent Card ─── */}
-          <div className={`p-3 sm:p-4 car:p-5 rounded-lg border border-green-500/30 bg-green-500/5`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Bot className="size-4 sm:size-5 car:size-6 text-green-400" />
-                <div>
-                  <span className="text-sm sm:text-base car:text-lg font-semibold text-dashbot-text">
-                    Main Agent
-                  </span>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] sm:text-xs car:text-sm text-dashbot-primary font-mono">
-                      {data.main_model}
-                    </span>
-                    <span className="text-[10px] sm:text-xs car:text-sm text-dashbot-muted">
-                      router / orchestrator
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-block w-2.5 h-2.5 car:w-3.5 car:h-3.5 rounded-full ${
-                    data.running
-                      ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'
-                      : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'
-                  }`}
-                />
-                <span className="text-xs car:text-sm text-dashbot-muted">
-                  {data.main_session_age}
-                </span>
-              </div>
-            </div>
+        {parsed.length > 0 ? (
+          <div className="space-y-1.5">
+            {parsed.map(s => (
+              <SessionRow key={s.key} session={s} onClose={onCloseSession} />
+            ))}
           </div>
-
-          {/* ─── Sessions ─── */}
-          <div className="border-t border-dashbot-border/50 pt-3">
-            <button
-              onClick={() => setShowSessions(!showSessions)}
-              className={`w-full flex items-center gap-1.5 text-dashbot-muted text-[10px] sm:text-xs car:text-sm font-medium uppercase tracking-wider hover:text-dashbot-text transition-colors ${carMode ? 'min-h-[44px]' : ''}`}
-            >
-              {showSessions
-                ? <ChevronDown className="size-3 car:size-3.5" />
-                : <ChevronRight className="size-3 car:size-3.5" />}
-              Sessions ({parsed.length})
-            </button>
-
-            {showSessions && (
-              <div className="mt-2 space-y-3">
-                {/* Main session */}
-                {main && (
-                  <div>
-                    <SessionRow session={main} onClose={onCloseSession} />
-                  </div>
-                )}
-
-                {/* Channel sessions */}
-                {sessionsByType.channel.length > 0 && (
-                  <div>
-                    <div className="text-[9px] sm:text-[10px] car:text-xs text-dashbot-muted font-medium mb-1 ml-1">
-                      Channels
-                    </div>
-                    <div className="space-y-1 ml-2 sm:ml-3">
-                      {sessionsByType.channel.map(s => (
-                        <SessionRow key={s.key} session={s} onClose={onCloseSession} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Cron sessions */}
-                {sessionsByType.cron.length > 0 && (
-                  <div>
-                    <div className="text-[9px] sm:text-[10px] car:text-xs text-dashbot-muted font-medium mb-1 ml-1">
-                      Cron Sessions
-                    </div>
-                    <div className={`space-y-1 ml-2 sm:ml-3 ${!carMode ? 'max-h-32 overflow-y-auto' : ''}`}>
-                      {sessionsByType.cron.map(s => (
-                        <SessionRow key={s.key} session={s} onClose={onCloseSession} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Other sessions */}
-                {sessionsByType.other.length > 0 && (
-                  <div>
-                    <div className="text-[9px] sm:text-[10px] car:text-xs text-dashbot-muted font-medium mb-1 ml-1">
-                      Other
-                    </div>
-                    <div className="space-y-1 ml-2 sm:ml-3">
-                      {sessionsByType.other.map(s => (
-                        <SessionRow key={s.key} session={s} onClose={onCloseSession} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+        ) : (
+          <div className="text-center py-4 text-dashbot-muted text-xs">
+            No active sessions
           </div>
-
-          {/* Architecture help */}
-          {!carMode && (
-            <div className="pt-1 border-t border-dashbot-border/30">
-              <ArchitectureHelp />
-            </div>
-          )}
-        </div>
+        )}
       </CardContent>
     </Card>
   )

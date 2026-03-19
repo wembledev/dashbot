@@ -21,39 +21,20 @@ function renderSidebar(data: SidebarData, connected: boolean, selection: DetailS
 
 const mockData: SidebarData = {
   mainAgent: {
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     status: "running",
     sessionAge: "2h 15m",
     running: true,
   },
-  subAgents: [
-    {
-      label: "dashbot-review",
-      model: "claude-opus-4-5",
-      status: "running",
-      task: "Code review and cleanup",
-      startedAt: new Date(Date.now() - 600_000).toISOString(),
-      duration: null,
-      sessionKey: "agent:main:subagent:abc123",
-    },
-    {
-      label: "seed-tasks",
-      model: "claude-opus-4-5",
-      status: "completed",
-      task: null,
-      startedAt: new Date(Date.now() - 1_800_000).toISOString(),
-      duration: "5m",
-      sessionKey: "agent:main:subagent:def456",
-    },
-  ],
+  subAgents: [],
   sessions: [
     { key: "agent:main:main", type: "main", label: "Main Session", status: "active", model: "sonnet", contextPercent: 25 },
-    { key: "agent:main:channel:dashbot", type: "dashbot", label: "DashBot Chat", status: "active", model: "sonnet", contextPercent: 10 },
+    { key: "dashbot:default", type: "dashbot", label: "DashBot Chat", status: "active", model: "sonnet", contextPercent: 10 },
   ],
   crons: [
     { id: "morning", name: "Morning briefing", schedule: "0 7 * * *", nextRun: "in 8h", lastRun: "today 7:00 AM", status: "ok" },
   ],
-  metrics: { agentCount: 2, sessionCount: 3, cronCount: 1 },
+  metrics: { agentCount: 1, sessionCount: 2, cronCount: 1 },
 }
 
 describe("Sidebar", () => {
@@ -61,34 +42,29 @@ describe("Sidebar", () => {
     mockOnSelect.mockClear()
   })
 
-  it("renders Agents section label", () => {
+  it("renders Agent section label when running", () => {
     renderSidebar(mockData, true)
-    expect(screen.getByText("Agents")).toBeInTheDocument()
+    expect(screen.getByText("Agent")).toBeInTheDocument()
   })
 
-  it("renders Main Agent card", () => {
+  it("renders Main Agent card when running", () => {
     renderSidebar(mockData, true)
     expect(screen.getByText("Main Agent")).toBeInTheDocument()
   })
 
-  it("shows running sub-agents", () => {
-    renderSidebar(mockData, true)
-    expect(screen.getByText("dashbot-review")).toBeInTheDocument()
+  it("hides Main Agent card when not running", () => {
+    const stoppedData = { ...mockData, mainAgent: { ...mockData.mainAgent, running: false, status: "idle" as const } }
+    renderSidebar(stoppedData, true)
+    expect(screen.queryByText("Main Agent")).not.toBeInTheDocument()
   })
 
-  it("shows completed sub-agents under Recent", () => {
-    renderSidebar(mockData, true)
-    expect(screen.getByText("seed-tasks")).toBeInTheDocument()
-    expect(screen.getByText(/Recent/)).toBeInTheDocument()
-  })
-
-  it("renders crons section as nav item", () => {
+  it("renders crons section", () => {
     renderSidebar(mockData, true)
     expect(screen.getByText("Crons")).toBeInTheDocument()
     expect(screen.getByText(/1 job/)).toBeInTheDocument()
   })
 
-  it("renders sessions section as nav item", () => {
+  it("renders sessions section", () => {
     renderSidebar(mockData, true)
     expect(screen.getByText("Sessions")).toBeInTheDocument()
     expect(screen.getByText(/2 total/)).toBeInTheDocument()
@@ -102,24 +78,21 @@ describe("Sidebar", () => {
     expect(mockOnSelect).toHaveBeenCalledWith({ type: "agent-main", id: "main" })
   })
 
-  it("calls onSelect when sub-agent is clicked", async () => {
-    const user = userEvent.setup()
-    renderSidebar(mockData, true)
-
-    await user.click(screen.getByText("dashbot-review"))
-    expect(mockOnSelect).toHaveBeenCalledWith({ type: "agent-sub", id: "dashbot-review" })
-  })
-
   it("highlights selected main agent", () => {
     renderSidebar(mockData, true, { type: "agent-main", id: "main" })
-    // The main agent button should have the selected styling
     const mainButton = screen.getByText("Main Agent").closest("button")
     expect(mainButton).toHaveClass("bg-blue-500/10")
   })
 
-  it("highlights selected sub-agent", () => {
-    renderSidebar(mockData, true, { type: "agent-sub", id: "dashbot-review" })
-    const subButton = screen.getByText("dashbot-review").closest("button")
-    expect(subButton).toHaveClass("bg-blue-500/10")
+  it("shows waiting state when no data", () => {
+    const emptyData: SidebarData = {
+      mainAgent: { model: "unknown", status: "idle", sessionAge: "unknown", running: false },
+      subAgents: [],
+      sessions: [],
+      crons: [],
+      metrics: { agentCount: 0, sessionCount: 0, cronCount: 0 },
+    }
+    renderSidebar(emptyData, false)
+    expect(screen.getByText("Waiting for OpenClaw...")).toBeInTheDocument()
   })
 })

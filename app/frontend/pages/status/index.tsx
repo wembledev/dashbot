@@ -2,12 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { router } from '@inertiajs/react'
 import AgentStatusWidget from '@/components/status/agent-status-widget'
 import AgentHierarchyWidget from '@/components/status/agent-hierarchy-widget'
-import TokenBurnWidget from '@/components/status/token-burn-widget'
 import TasksWidget from '@/components/status/tasks-widget'
 import MemoryWidget from '@/components/status/memory-widget'
-import SessionHealthWidget from '@/components/status/session-health-widget'
 import { useCarMode } from '@/contexts/car-mode-context'
-import { RefreshCw, Car } from 'lucide-react'
+import { RefreshCw, Car, Network } from 'lucide-react'
 import type { StatusData } from '@/types/status'
 import { cable } from '@/lib/cable'
 import type { Subscription } from '@rails/actioncable'
@@ -41,6 +39,7 @@ function StatusContent({ status_data: initialData }: Props) {
   const [refreshing, setRefreshing] = useState(false)
   const [connected, setConnected] = useState(false)
   const subscriptionRef = useRef<Subscription | null>(null)
+  const hasData = data.sessions.length > 0 || data.tasks.cron_jobs.length > 0 || data.agent_status.running
   const { carMode } = useCarMode()
 
   const refreshData = useCallback(() => {
@@ -169,11 +168,16 @@ function StatusContent({ status_data: initialData }: Props) {
           </div>
 
           {/* Status grid */}
-          {carMode ? (
+          {!hasData ? (
+            <div className="flex flex-col items-center justify-center py-12 text-dashbot-muted">
+              <Network className="size-8 mb-3 opacity-30" />
+              <p className="text-sm">Waiting for OpenClaw connection...</p>
+              <p className="text-xs mt-1 opacity-60">Status data will appear when the agent connects</p>
+            </div>
+          ) : carMode ? (
             <div className="space-y-3">
               <AgentStatusWidget data={data.agent_status} />
               <AgentHierarchyWidget
-                data={data.agent_status}
                 sessions={data.sessions}
                 onCloseSession={handleCloseSession}
               />
@@ -181,17 +185,14 @@ function StatusContent({ status_data: initialData }: Props) {
             </div>
           ) : (
             <div className="space-y-2">
-              {/* Top row: Hierarchy */}
+              {/* Top row: Sessions */}
               <AgentHierarchyWidget
-                data={data.agent_status}
                 sessions={data.sessions}
                 onCloseSession={handleCloseSession}
               />
 
               {/* Bottom row: Supporting widgets */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-                <TokenBurnWidget data={data.token_burn} sessions={data.sessions} />
-                <SessionHealthWidget data={data.session_health} sessions={data.sessions} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <TasksWidget data={data.tasks} />
                 <MemoryWidget data={data.memory} />
               </div>
