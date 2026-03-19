@@ -3,107 +3,17 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import HelpButton from './help-button'
 import { useCarMode } from '@/contexts/car-mode-context'
 import {
-  Bot, GitBranch, ChevronDown, ChevronRight, X, Info,
+  Bot, ChevronDown, ChevronRight, X, Info,
   Zap, CheckCircle, XCircle, Pause,
-  Network, AlertTriangle
+  Network
 } from 'lucide-react'
 import { parseSessions, groupSessionsByParent } from '@/lib/sessions'
-import type { AgentStatusData, SessionInfo, AgentEvent, ParsedSession, SessionStatus } from '@/types/status'
+import type { AgentStatusData, SessionInfo, ParsedSession, SessionStatus } from '@/types/status'
 
 interface Props {
   data: AgentStatusData
   sessions: SessionInfo[]
-  events: AgentEvent[]
   onCloseSession?: (sessionKey: string) => void
-}
-
-// ─── Sub-agent derived from events ────────────────────────
-interface SubAgent {
-  label: string
-  model: string | null
-  status: 'running' | 'completed' | 'failed' | 'timeout'
-  description: string | null
-  spawnedAt: string
-  completedAt: string | null
-  durationSeconds: number | null
-  result: string | null
-  error: string | null
-  sessionKey: string | null
-}
-
-/** Derive sub-agent state from events */
-function deriveSubAgents(events: AgentEvent[]): SubAgent[] {
-  const agents = new Map<string, SubAgent>()
-
-  // Process events oldest-first to build state
-  const sorted = [...events].sort((a, b) =>
-    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  )
-
-  for (const event of sorted) {
-    if (!event.agent_label) continue
-
-    if (event.event_type === 'spawned') {
-      agents.set(event.agent_label, {
-        label: event.agent_label,
-        model: event.model,
-        status: 'running',
-        description: event.description,
-        spawnedAt: event.created_at,
-        completedAt: null,
-        durationSeconds: null,
-        result: null,
-        error: null,
-        sessionKey: event.session_key,
-      })
-    } else if (event.event_type === 'completed' && agents.has(event.agent_label)) {
-      const agent = agents.get(event.agent_label)!
-      agent.status = 'completed'
-      agent.completedAt = event.created_at
-      agent.durationSeconds = event.metadata?.duration_seconds as number ?? null
-      agent.result = event.metadata?.result as string ?? event.description ?? null
-    } else if ((event.event_type === 'failed' || event.event_type === 'timeout') && agents.has(event.agent_label)) {
-      const agent = agents.get(event.agent_label)!
-      agent.status = event.event_type as 'failed' | 'timeout'
-      agent.completedAt = event.created_at
-      agent.error = event.metadata?.error as string ?? null
-      agent.durationSeconds = event.metadata?.duration_seconds as number ?? null
-    }
-  }
-
-  // Sort: running first, then by spawn time (newest first)
-  return Array.from(agents.values()).sort((a, b) => {
-    if (a.status === 'running' && b.status !== 'running') return -1
-    if (a.status !== 'running' && b.status === 'running') return 1
-    return new Date(b.spawnedAt).getTime() - new Date(a.spawnedAt).getTime()
-  })
-}
-
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${Math.round(seconds)}s`
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`
-  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
-}
-
-function formatRelativeTime(iso: string): string {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000
-  if (diff < 60) return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
-}
-
-function formatRunningDuration(iso: string): string {
-  const seconds = (Date.now() - new Date(iso).getTime()) / 1000
-  return formatDuration(seconds)
-}
-
-// ─── Status configs ────────────────────────
-const STATUS_CONFIG: Record<string, { icon: typeof Zap; color: string; label: string }> = {
-  running:   { icon: Zap,           color: 'text-green-400',  label: 'Running' },
-  completed: { icon: CheckCircle,   color: 'text-blue-400',   label: 'Done' },
-  failed:    { icon: XCircle,       color: 'text-red-400',    label: 'Failed' },
-  timeout:   { icon: AlertTriangle, color: 'text-orange-400', label: 'Timeout' },
 }
 
 const SESSION_STATUS_CONFIG: Record<SessionStatus, { icon: typeof Zap; color: string; label: string }> = {
@@ -120,95 +30,6 @@ const TYPE_COLORS: Record<string, string> = {
   channel:  'border-l-cyan-500',
   cron:     'border-l-amber-500',
   unknown:  'border-l-gray-500',
-}
-
-// ─── Sub-agent card ────────────────────────
-function SubAgentCard({ agent }: { agent: SubAgent }) {
-  const [expanded, setExpanded] = useState(false)
-  const { carMode } = useCarMode()
-  const config = STATUS_CONFIG[agent.status]
-  const Icon = config.icon
-
-  return (
-    <div className="border-l-2 border-l-violet-500 rounded-r bg-[rgba(255,255,255,0.03)] car:bg-[rgba(255,255,255,0.05)]">
-      <div
-        className={`flex items-center gap-2 p-2 sm:p-2.5 car:p-3 cursor-pointer hover:bg-[rgba(255,255,255,0.03)] transition-colors ${carMode ? 'min-h-[52px]' : ''}`}
-        onClick={() => setExpanded(!expanded)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && setExpanded(!expanded)}
-        aria-expanded={expanded}
-      >
-        {!carMode && (
-          expanded
-            ? <ChevronDown className="size-3 text-dashbot-muted shrink-0" />
-            : <ChevronRight className="size-3 text-dashbot-muted shrink-0" />
-        )}
-
-        {/* Label */}
-        <span className="text-[11px] sm:text-xs car:text-sm font-medium text-dashbot-text truncate flex-1">
-          {agent.label}
-        </span>
-
-        {/* Model badge */}
-        {agent.model && (
-          <span className="text-[9px] sm:text-[10px] car:text-xs px-1.5 py-0.5 rounded bg-dashbot-primary/10 text-dashbot-primary font-mono shrink-0">
-            {agent.model}
-          </span>
-        )}
-
-        {/* Status */}
-        <span className={`inline-flex items-center gap-1 text-[10px] car:text-xs font-medium ${config.color} shrink-0`}>
-          <Icon className="size-3 car:size-3.5" />
-          <span className="hidden sm:inline car:inline">{config.label}</span>
-        </span>
-      </div>
-
-      {expanded && (
-        <div className="px-3 sm:px-4 pb-2.5 sm:pb-3 space-y-1.5 text-[10px] sm:text-xs border-t border-dashbot-border/30">
-          {/* Task description */}
-          {agent.description && (
-            <p className="text-dashbot-muted pt-1.5">{agent.description}</p>
-          )}
-
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-            <span className="text-dashbot-muted">Spawned</span>
-            <span className="text-dashbot-text">{formatRelativeTime(agent.spawnedAt)}</span>
-
-            {agent.status === 'running' && (
-              <>
-                <span className="text-dashbot-muted">Running for</span>
-                <span className="text-green-400">{formatRunningDuration(agent.spawnedAt)}</span>
-              </>
-            )}
-
-            {agent.durationSeconds && (
-              <>
-                <span className="text-dashbot-muted">Duration</span>
-                <span className="text-dashbot-text">{formatDuration(agent.durationSeconds)}</span>
-              </>
-            )}
-          </div>
-
-          {/* Result */}
-          {agent.result && (
-            <div className="pt-1">
-              <span className="text-dashbot-muted">Result: </span>
-              <span className="text-dashbot-text">{agent.result}</span>
-            </div>
-          )}
-
-          {/* Error */}
-          {agent.error && (
-            <div className="pt-1">
-              <span className="text-dashbot-muted">Error: </span>
-              <span className="text-red-400">{agent.error}</span>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
 }
 
 // ─── Session row ────────────────────────
@@ -337,10 +158,7 @@ function ArchitectureHelp() {
         </button>
       </div>
       <p className="text-dashbot-muted">
-        <strong className="text-green-400">Main Agent</strong> — The router/orchestrator (sonnet). Receives all messages and dispatches work.
-      </p>
-      <p className="text-dashbot-muted">
-        <strong className="text-violet-400">Sub-agents</strong> — Background workers (typically opus). Spawned for specific tasks, report back when done.
+        <strong className="text-green-400">Main Agent</strong> — The router/orchestrator. Receives all messages and dispatches work.
       </p>
       <p className="text-dashbot-muted">
         <strong className="text-amber-400">Crons</strong> — Scheduled tasks that run independently. Results saved for main agent.
@@ -353,18 +171,15 @@ function ArchitectureHelp() {
 }
 
 // ─── Main component ────────────────────────
-export default function AgentHierarchyWidget({ data, sessions, events, onCloseSession }: Props) {
+export default function AgentHierarchyWidget({ data, sessions, onCloseSession }: Props) {
   const { carMode } = useCarMode()
   const parsed = parseSessions(sessions)
   const { main, children } = groupSessionsByParent(parsed)
-  const subAgents = deriveSubAgents(events)
 
-  const runningCount = subAgents.filter(a => a.status === 'running').length
   const sessionsByType = {
-    subagent: children.filter(s => s.type === 'subagent'),
     channel: children.filter(s => s.type === 'dashbot' || s.type === 'channel'),
     cron: children.filter(s => s.type === 'cron'),
-    other: children.filter(s => s.type === 'unknown'),
+    other: children.filter(s => s.type === 'unknown' || s.type === 'subagent'),
   }
 
   const [showSessions, setShowSessions] = useState(false)
@@ -375,11 +190,11 @@ export default function AgentHierarchyWidget({ data, sessions, events, onCloseSe
         <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-dashbot-text">
           <Network className="size-4 sm:size-5 car:size-6 text-dashbot-primary" />
           <span className="car:text-lg">Agent Hierarchy</span>
-          <HelpButton topic="Agent Hierarchy" context={`Agent hierarchy showing: main agent (${data.main_model}), ${subAgents.length} sub-agents (${runningCount} running), ${parsed.length} sessions. How does the agent hierarchy work? What are sub-agents?`} />
+          <HelpButton topic="Agent Hierarchy" context={`Agent hierarchy showing: main agent (${data.main_model}), ${parsed.length} sessions. How does the agent hierarchy work?`} />
         </CardTitle>
         <CardDescription className="car:text-sm">
           {data.running
-            ? `${runningCount > 0 ? `${runningCount} sub-agent${runningCount !== 1 ? 's' : ''} active · ` : ''}${data.session_count} session${data.session_count !== 1 ? 's' : ''}`
+            ? `${data.session_count} session${data.session_count !== 1 ? 's' : ''}`
             : 'Agent stopped'}
         </CardDescription>
       </CardHeader>
@@ -387,7 +202,7 @@ export default function AgentHierarchyWidget({ data, sessions, events, onCloseSe
         <div className="space-y-3 sm:space-y-4">
 
           {/* ─── Main Agent Card ─── */}
-          <div className={`p-3 sm:p-4 car:p-5 rounded-lg border border-green-500/30 bg-green-500/5 ${carMode ? '' : ''}`}>
+          <div className={`p-3 sm:p-4 car:p-5 rounded-lg border border-green-500/30 bg-green-500/5`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bot className="size-4 sm:size-5 car:size-6 text-green-400" />
@@ -419,21 +234,6 @@ export default function AgentHierarchyWidget({ data, sessions, events, onCloseSe
               </div>
             </div>
           </div>
-
-          {/* ─── Sub-agents ─── */}
-          {subAgents.length > 0 && (
-            <div>
-              <div className="text-dashbot-muted text-[10px] sm:text-xs car:text-sm font-medium mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                <GitBranch className="size-3 car:size-3.5 text-violet-400" />
-                Sub-agents ({subAgents.length})
-              </div>
-              <div className="space-y-1.5 sm:space-y-2 ml-2 sm:ml-3">
-                {subAgents.map((agent) => (
-                  <SubAgentCard key={agent.label + agent.spawnedAt} agent={agent} />
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* ─── Sessions ─── */}
           <div className="border-t border-dashbot-border/50 pt-3">
@@ -470,20 +270,6 @@ export default function AgentHierarchyWidget({ data, sessions, events, onCloseSe
                   </div>
                 )}
 
-                {/* Sub-agent sessions */}
-                {sessionsByType.subagent.length > 0 && (
-                  <div>
-                    <div className="text-[9px] sm:text-[10px] car:text-xs text-dashbot-muted font-medium mb-1 ml-1">
-                      Sub-agent Sessions
-                    </div>
-                    <div className="space-y-1 ml-2 sm:ml-3">
-                      {sessionsByType.subagent.map(s => (
-                        <SessionRow key={s.key} session={s} onClose={onCloseSession} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {/* Cron sessions */}
                 {sessionsByType.cron.length > 0 && (
                   <div>
@@ -492,6 +278,20 @@ export default function AgentHierarchyWidget({ data, sessions, events, onCloseSe
                     </div>
                     <div className={`space-y-1 ml-2 sm:ml-3 ${!carMode ? 'max-h-32 overflow-y-auto' : ''}`}>
                       {sessionsByType.cron.map(s => (
+                        <SessionRow key={s.key} session={s} onClose={onCloseSession} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Other sessions */}
+                {sessionsByType.other.length > 0 && (
+                  <div>
+                    <div className="text-[9px] sm:text-[10px] car:text-xs text-dashbot-muted font-medium mb-1 ml-1">
+                      Other
+                    </div>
+                    <div className="space-y-1 ml-2 sm:ml-3">
+                      {sessionsByType.other.map(s => (
                         <SessionRow key={s.key} session={s} onClose={onCloseSession} />
                       ))}
                     </div>

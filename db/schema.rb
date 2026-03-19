@@ -10,21 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_01_155649) do
-  create_table "agent_events", force: :cascade do |t|
-    t.string "agent_label"
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.string "event_type", null: false
-    t.json "metadata"
-    t.string "model"
-    t.string "session_key"
-    t.datetime "updated_at", null: false
-    t.index ["created_at"], name: "index_agent_events_on_created_at"
-    t.index ["event_type"], name: "index_agent_events_on_event_type"
-    t.index ["session_key"], name: "index_agent_events_on_session_key"
-  end
-
+ActiveRecord::Schema[8.1].define(version: 2026_03_19_210000) do
   create_table "cards", force: :cascade do |t|
     t.string "card_type", null: false
     t.integer "chat_session_id", null: false
@@ -92,6 +78,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_01_155649) do
     t.index ["settable_type", "settable_id"], name: "index_settings_on_settable"
   end
 
+  create_table "task_feedbacks", force: :cascade do |t|
+    t.string "author_type", default: "user"
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.integer "task_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["task_id", "created_at"], name: "index_task_feedbacks_on_task_id_and_created_at"
+    t.index ["task_id"], name: "index_task_feedbacks_on_task_id"
+    t.index ["user_id"], name: "index_task_feedbacks_on_user_id"
+  end
+
+  create_table "tasks", force: :cascade do |t|
+    t.string "category"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.text "details"
+    t.string "input_prompt"
+    t.json "metadata", default: {}
+    t.boolean "needs_approval", default: false
+    t.string "priority", default: "normal"
+    t.string "project"
+    t.string "status", default: "active", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["priority"], name: "index_tasks_on_priority"
+    t.index ["project"], name: "index_tasks_on_project"
+    t.index ["status", "priority"], name: "index_tasks_on_status_and_priority"
+    t.index ["status"], name: "index_tasks_on_status"
+    t.index ["user_id"], name: "index_tasks_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "encrypted_password"
@@ -99,9 +119,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_01_155649) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "cards", "chat_sessions"
+  add_foreign_key "cards", "messages"
   add_foreign_key "chat_sessions", "profiles"
   add_foreign_key "chat_sessions", "users"
   add_foreign_key "messages", "chat_sessions"
   add_foreign_key "profiles", "users"
   add_foreign_key "qr_tokens", "users"
+  add_foreign_key "task_feedbacks", "tasks"
+  add_foreign_key "task_feedbacks", "users"
+  add_foreign_key "tasks", "users"
 end

@@ -99,18 +99,6 @@ export interface SessionHealthData {
   session_key: string
 }
 
-// Agent Events
-export interface AgentEvent {
-  id: number
-  event_type: string
-  agent_label: string | null
-  session_key: string | null
-  model: string | null
-  description: string | null
-  metadata: Record<string, unknown> | null
-  created_at: string
-}
-
 export interface StatusData {
   agent_status: AgentStatusData
   token_burn: TokenBurnData

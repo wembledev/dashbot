@@ -2,30 +2,15 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import HelpButton from './help-button'
 import { Bot, Clock } from 'lucide-react'
 import { useCarMode } from '@/contexts/car-mode-context'
-import type { AgentStatusData, AgentEvent } from '@/types/status'
+import type { AgentStatusData } from '@/types/status'
 
 interface Props {
   data: AgentStatusData
-  events: AgentEvent[]
 }
 
-/** Quick summary card — model, status, running sub-agent count */
-export default function AgentStatusWidget({ data, events }: Props) {
+/** Quick summary card — model, status, session count */
+export default function AgentStatusWidget({ data }: Props) {
   const { carMode } = useCarMode()
-
-  // Count running sub-agents from events
-  const runningSubAgents = (() => {
-    const labels = new Map<string, string>()
-    const sorted = [...events].sort((a, b) =>
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    )
-    for (const e of sorted) {
-      if (!e.agent_label) continue
-      if (e.event_type === 'spawned') labels.set(e.agent_label, 'running')
-      else if (['completed', 'failed', 'timeout'].includes(e.event_type)) labels.delete(e.agent_label)
-    }
-    return labels.size
-  })()
 
   return (
     <Card className={carMode ? 'car:border-2' : ''}>
@@ -33,7 +18,7 @@ export default function AgentStatusWidget({ data, events }: Props) {
         <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-dashbot-text">
           <Bot className="size-4 sm:size-5 car:size-6 text-dashbot-primary" />
           <span className="car:text-lg">Agent Status</span>
-          <HelpButton topic="Agent Status" context={`Agent status: ${data.running ? 'running' : 'stopped'}, model=${data.main_model}, uptime=${data.main_session_age}, ${data.session_count} sessions, ${runningSubAgents} sub-agents running. What do these mean?`} />
+          <HelpButton topic="Agent Status" context={`Agent status: ${data.running ? 'running' : 'stopped'}, model=${data.main_model}, uptime=${data.main_session_age}, ${data.session_count} sessions. What do these mean?`} />
         </CardTitle>
         <CardDescription className="car:text-sm">
           {data.running
@@ -79,16 +64,6 @@ export default function AgentStatusWidget({ data, events }: Props) {
               {data.session_count}
             </span>
           </div>
-
-          {/* Sub-agents */}
-          {runningSubAgents > 0 && (
-            <div className="flex items-center justify-between">
-              <span className="text-dashbot-muted text-xs sm:text-sm car:text-base">Sub-agents</span>
-              <span className="text-violet-400 text-xs sm:text-sm car:text-base font-medium">
-                {runningSubAgents} running
-              </span>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

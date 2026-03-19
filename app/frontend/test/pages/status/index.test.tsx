@@ -92,19 +92,6 @@ const mockStatusData = {
   fetched_at: "2026-01-30 19:30:00 PST",
 }
 
-const mockEvents = [
-  {
-    id: 1,
-    event_type: "spawned",
-    agent_label: "test-task",
-    session_key: "agent:main:subagent:abc123",
-    model: "claude-opus-4-5",
-    description: "Test task for building something",
-    metadata: null,
-    created_at: new Date().toISOString(),
-  },
-]
-
 describe("StatusIndex", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -119,18 +106,17 @@ describe("StatusIndex", () => {
   })
 
   it("renders the page title", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
+    renderWithProvider(<StatusIndex status_data={mockStatusData} />)
     expect(screen.getByRole("heading", { name: "Status" })).toBeInTheDocument()
   })
 
-  it("renders hierarchy and activity widgets", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
+  it("renders hierarchy widget", () => {
+    renderWithProvider(<StatusIndex status_data={mockStatusData} />)
     expect(screen.getByText("Agent Hierarchy")).toBeInTheDocument()
-    expect(screen.getByText("Activity Log")).toBeInTheDocument()
   })
 
   it("renders supporting widgets", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
+    renderWithProvider(<StatusIndex status_data={mockStatusData} />)
     expect(screen.getByText("Live Token Burn")).toBeInTheDocument()
     expect(screen.getByText("Session Health")).toBeInTheDocument()
     expect(screen.getByText("Cron Jobs")).toBeInTheDocument()
@@ -138,17 +124,12 @@ describe("StatusIndex", () => {
   })
 
   it("displays the fetched_at timestamp", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
+    renderWithProvider(<StatusIndex status_data={mockStatusData} />)
     expect(screen.getByText(/2026-01-30 19:30:00 PST/)).toBeInTheDocument()
   })
 
   it("has a refresh button", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
+    renderWithProvider(<StatusIndex status_data={mockStatusData} />)
     expect(screen.getByLabelText("Refresh status")).toBeInTheDocument()
-  })
-
-  it("renders the subtitle", () => {
-    renderWithProvider(<StatusIndex status_data={mockStatusData} initial_events={mockEvents} />)
-    // Subtitle removed in density pass — page header is now compact
   })
 })

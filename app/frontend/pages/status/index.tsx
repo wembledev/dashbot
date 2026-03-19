@@ -2,20 +2,18 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { router } from '@inertiajs/react'
 import AgentStatusWidget from '@/components/status/agent-status-widget'
 import AgentHierarchyWidget from '@/components/status/agent-hierarchy-widget'
-import AgentActivityLog from '@/components/status/agent-activity-log'
 import TokenBurnWidget from '@/components/status/token-burn-widget'
 import TasksWidget from '@/components/status/tasks-widget'
 import MemoryWidget from '@/components/status/memory-widget'
 import SessionHealthWidget from '@/components/status/session-health-widget'
 import { useCarMode } from '@/contexts/car-mode-context'
 import { RefreshCw, Car } from 'lucide-react'
-import type { StatusData, AgentEvent } from '@/types/status'
+import type { StatusData } from '@/types/status'
 import { cable } from '@/lib/cable'
 import type { Subscription } from '@rails/actioncable'
 
 interface Props {
   status_data: StatusData
-  initial_events: AgentEvent[]
 }
 
 function CarModeToggle() {
@@ -37,14 +35,12 @@ function CarModeToggle() {
   )
 }
 
-function StatusContent({ status_data: initialData, initial_events: initialEvents }: Props) {
+function StatusContent({ status_data: initialData }: Props) {
   const [data, setData] = useState<StatusData>(initialData)
-  const [events, setEvents] = useState<AgentEvent[]>(initialEvents || [])
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [refreshing, setRefreshing] = useState(false)
   const [connected, setConnected] = useState(false)
   const subscriptionRef = useRef<Subscription | null>(null)
-  const eventsSubRef = useRef<Subscription | null>(null)
   const { carMode } = useCarMode()
 
   const refreshData = useCallback(() => {
@@ -121,25 +117,6 @@ function StatusContent({ status_data: initialData, initial_events: initialEvents
     }
   }, [])
 
-  // Subscribe to AgentEventsChannel for live sub-agent updates
-  useEffect(() => {
-    eventsSubRef.current = cable.subscriptions.create(
-      { channel: 'AgentEventsChannel' },
-      {
-        received(payload: { type: string; event?: AgentEvent }) {
-          if (payload.type === 'new_event' && payload.event) {
-            setEvents(prev => [payload.event!, ...prev].slice(0, 100))
-          }
-        },
-      }
-    )
-
-    return () => {
-      eventsSubRef.current?.unsubscribe()
-      eventsSubRef.current = null
-    }
-  }, [])
-
   // Session keep-alive heartbeat every 60 seconds
   useEffect(() => {
     const keepAliveTimer = setInterval(() => {
@@ -194,27 +171,22 @@ function StatusContent({ status_data: initialData, initial_events: initialEvents
           {/* Status grid */}
           {carMode ? (
             <div className="space-y-3">
-              <AgentStatusWidget data={data.agent_status} events={events} />
+              <AgentStatusWidget data={data.agent_status} />
               <AgentHierarchyWidget
                 data={data.agent_status}
                 sessions={data.sessions}
-                events={events}
                 onCloseSession={handleCloseSession}
               />
               <TasksWidget data={data.tasks} />
             </div>
           ) : (
             <div className="space-y-2">
-              {/* Top row: Hierarchy + Activity Log */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                <AgentHierarchyWidget
-                  data={data.agent_status}
-                  sessions={data.sessions}
-                  events={events}
-                  onCloseSession={handleCloseSession}
-                />
-                <AgentActivityLog initialEvents={events} />
-              </div>
+              {/* Top row: Hierarchy */}
+              <AgentHierarchyWidget
+                data={data.agent_status}
+                sessions={data.sessions}
+                onCloseSession={handleCloseSession}
+              />
 
               {/* Bottom row: Supporting widgets */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">

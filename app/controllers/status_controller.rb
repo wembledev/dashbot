@@ -3,23 +3,13 @@
 class StatusController < ApplicationController
   def index
     render inertia: "status/index", props: {
-      status_data: fetch_status_data,
-      initial_events: AgentEvent.recent.limit(50).map(&:as_broadcast)
+      status_data: fetch_status_data
     }
   end
 
   # JSON polling endpoint
   def poll
     render json: fetch_status_data
-  end
-
-  # JSON events endpoint (cookie-auth for dashboard)
-  def events
-    limit = [ params.fetch(:limit, 50).to_i, 100 ].min
-    events = AgentEvent.recent.limit(limit)
-    events = events.since(Time.parse(params[:since])) if params[:since].present?
-
-    render json: { events: events.map(&:as_broadcast) }
   end
 
   # Session keep-alive endpoint
