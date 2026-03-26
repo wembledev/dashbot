@@ -75,4 +75,34 @@ describe("HomeIndex", () => {
     renderWithProvider(<HomeIndex {...defaultProps} />)
     expect(screen.getByText("Hi there!")).toBeInTheDocument()
   })
+
+  it("does not render the same assistant text twice when a card reply matches the message body", () => {
+    renderWithProvider(
+      <HomeIndex
+        chat_session_id={1}
+        messages={[
+          {
+            id: 1,
+            role: "assistant",
+            content: "Because I answered your previous request, then you sent ?, and I treated that as current status again.",
+            created_at: "2026-03-26T12:31:00Z",
+            metadata: {
+              card: {
+                type: "confirm",
+                responded: true,
+                response: "yes",
+                reply: "Because I answered your previous request, then you sent ?, and I treated that as current status again.",
+                prompt: "Send this?",
+                options: [{ label: "Yes", value: "yes" }],
+              },
+            },
+          },
+        ]}
+      />
+    )
+
+    expect(
+      screen.getAllByText("Because I answered your previous request, then you sent ?, and I treated that as current status again.")
+    ).toHaveLength(1)
+  })
 })

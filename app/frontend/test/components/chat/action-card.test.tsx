@@ -90,6 +90,36 @@ describe("ConfirmCard", () => {
     expect(screen.getByText("Great, deploying now!")).toBeInTheDocument()
   })
 
+  it("hides duplicated reply text when it matches the parent assistant message", () => {
+    const repliedCard: ConfirmCardType = {
+      ...mockCard,
+      responded: true,
+      response: "yes",
+      reply: "Great, deploying now!",
+    }
+    render(<ConfirmCard card={repliedCard} parentMessageContent="Great, deploying now!" />)
+
+    expect(screen.queryByText("Great, deploying now!")).not.toBeInTheDocument()
+  })
+
+  it("updates when a card reply arrives after initial render", () => {
+    const { rerender } = render(<ConfirmCard card={mockCard} />)
+
+    rerender(
+      <ConfirmCard
+        card={{
+          ...mockCard,
+          responded: true,
+          response: "yes",
+          reply: "Great, deploying now!",
+        }}
+      />
+    )
+
+    expect(screen.getByText("Yes")).toBeInTheDocument()
+    expect(screen.getByText("Great, deploying now!")).toBeInTheDocument()
+  })
+
   it("prevents multiple selections", async () => {
     const user = userEvent.setup()
     const onSelect = vi.fn()

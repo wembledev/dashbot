@@ -242,6 +242,7 @@ export default function HomeIndex({ chat_session_id, messages: initialMessages }
                     <ActionCard 
                       card={msg.metadata!.card as ActionCardType} 
                       onSelect={handleCardSelect}
+                      parentMessageContent={msg.content}
                     />
                   )}
                 </div>

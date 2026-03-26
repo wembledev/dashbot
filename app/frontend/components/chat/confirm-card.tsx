@@ -1,19 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check, Loader2 } from 'lucide-react'
 import type { ConfirmCard } from '@/types/cards'
 
 interface ConfirmCardProps {
   card: ConfirmCard
   onSelect?: (value: string) => void
+  parentMessageContent?: string
 }
 
-export default function ConfirmCardComponent({ card, onSelect }: ConfirmCardProps) {
+export default function ConfirmCardComponent({ card, onSelect, parentMessageContent }: ConfirmCardProps) {
   const [selectedValue, setSelectedValue] = useState<string | null>(
     card.responded ? (card.response || null) : null
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [reply] = useState<string | null>(card.reply || null)
+
+  useEffect(() => {
+    if (card.responded || card.response) {
+      setSelectedValue(card.response || null)
+    }
+  }, [card.responded, card.response])
 
   const handleSelect = async (value: string) => {
     if (selectedValue || loading) return
@@ -55,6 +61,9 @@ export default function ConfirmCardComponent({ card, onSelect }: ConfirmCardProp
 
   const selectedLabel = card.options.find(o => o.value === selectedValue)?.label
   const isResponded = selectedValue !== null
+  const reply = card.reply?.trim() || null
+  const parentText = parentMessageContent?.trim() || null
+  const shouldRenderReply = Boolean(reply && reply !== parentText)
 
   // After responding: clean result view (no buttons)
   if (isResponded) {
@@ -68,7 +77,7 @@ export default function ConfirmCardComponent({ card, onSelect }: ConfirmCardProp
             </div>
             <span className="text-dashbot-text text-base font-medium">{selectedLabel}</span>
           </div>
-          {reply && (
+          {shouldRenderReply && (
             <p className="text-dashbot-muted text-sm mt-3 pl-8 border-l-2 border-dashbot-primary/30">{reply}</p>
           )}
         </div>
